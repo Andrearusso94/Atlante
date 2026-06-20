@@ -13,6 +13,8 @@ import { autoPause, clearFlyTarget, dragging, qA, qTarget } from "./controls";
 import type { SceneRuntimeState } from "./scene";
 import type { BordersRuntimeState } from "./borders";
 import { nearestFile, updateBorders } from "./borders";
+import type { PlagueRuntimeState } from "./plague";
+import { syncPlague } from "./plague";
 
 /** Avvicina `current` a `target` con uno slerp di fattore `factor` (mutando `current`,
  * come `Quaternion.slerp`); se l'angolo residuo è sotto `snapEps` scatta esattamente
@@ -66,6 +68,9 @@ export interface LoopHandle {
 export interface LoopDeps {
   scene: SceneRuntimeState;
   borders: BordersRuntimeState;
+  /** Stato del layer Peste (engine/plague.ts) — il loop lo passa a syncPlague ogni
+   * volta che aggiorna automaticamente i confini, esattamente come nel v12 (vedi sotto). */
+  plague: PlagueRuntimeState;
   makeLabel: (text: string) => Object3D;
 }
 
@@ -128,10 +133,16 @@ export function createLoop(
     const borders = deps.borders;
     if (borders.on && nearestFile(curYearNum).f !== borders.file && !borders.busy) {
       void updateBorders(borders, curYearNum, deps.makeLabel).then((result) => {
-        if (!result) return;
-        g.globe.add(result.group);
-        if (result.previousGroup) g.globe.remove(result.previousGroup);
-        onBordersEraChange?.(result.eraLabel);
+        if (result) {
+          g.globe.add(result.group);
+          if (result.previousGroup) g.globe.remove(result.previousGroup);
+          onBordersEraChange?.(result.eraLabel);
+        }
+        // v12: `syncPlague()` era l'ultima riga di `updateBorders`, eseguita sempre —
+        // anche se il file non era cambiato (qui: `result` null) o il fetch falliva —
+        // non solo quando la build aveva successo. Stesso punto, stessa incondizionalità.
+        const plagueResult = syncPlague(deps.plague, g.globe, borders);
+        if (plagueResult) onBordersEraChange?.(plagueResult.eraLabel);
       });
     }
 

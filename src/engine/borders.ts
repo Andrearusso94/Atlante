@@ -88,6 +88,13 @@ export async function cacheGeo(file: string): Promise<GeoFeatureCollection> {
   return j;
 }
 
+/** Legge (senza scaricare) il GeoJSON già in cache per `file`, o `undefined` se non
+ * è mai stato richiesto. Usato da engine/plague.ts (v12: leggeva `geoCache[...]`
+ * direttamente, essendo una variabile globale visibile a tutto lo script). */
+export function getCachedGeo(file: string): GeoFeatureCollection | undefined {
+  return geoCache[file];
+}
+
 /** Lo snapshot di AVAILABLE più vicino all'anno dato. */
 export function nearestFile(year: number): AvailableYear {
   let b = AVAILABLE[0];

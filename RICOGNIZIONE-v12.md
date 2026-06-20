@@ -23,20 +23,37 @@ di modulo (di proposito, vedi sotto).
 | `engine/scene.ts` | `aiLayer`, `updaters`, `sceneLabels`, `yearAt`, `curYearFn`, `lastDataNote` — `let`/`const` di modulo | raggruppati in `SceneRuntimeState` (`createSceneState()`); `GlobeEngine` ne possiede una copia privata (`this.sceneState`) e la passa per riferimento a `renderScene`/`clearScene`/`createLoop`. `matGold`/`matHalo`/`makeLabel`/`makeShip`/`placeShip` restano funzioni/risorse condivise senza stato proprio (nessuna le muta dopo la creazione: innocuo condividerle) |
 | `engine/borders.ts` | `bordersFile`, `bordersObj`, `bordersBusy`, `bordersOn` — `let` di modulo esportati | raggruppati in `BordersRuntimeState` (`createBordersState()`); `GlobeEngine` la possiede come `this.bordersState`. `geoCache`/`bordersCache` (cache di fetch/build, non "stato" nel senso di *cosa sto mostrando ora*) restano cache di modulo |
 | `engine/globe.ts` | `createGlobe(container)` ritorna un oggetto `Globe` | invariato: `GlobeEngine.mount()` lo chiama e tiene il risultato in `this.globeHandle` |
-| `engine/loop.ts` | `createLoop(g, onTick, ...)` leggeva `updaters`/`sceneLabels`/`yearAt`/`curYearFn`/`bordersOn`/`bordersFile`/`bordersObj`/`bordersBusy` da import live di scene.ts/borders.ts | ora li riceve per riferimento via `LoopDeps.scene`/`LoopDeps.borders` (gli stessi `SceneRuntimeState`/`BordersRuntimeState` di GlobeEngine) — `progress`/`playing`/`curYearNum`/`rafId` restano chiusi nella closure di `createLoop`, e `GlobeEngine` tiene il `LoopHandle` in `this.loopHandle` |
-| `engine/controls.ts` | `dragging`, `autoPause`, `qTarget` — `let` di modulo esportati | **non toccato in questo blocco** (il blocco 5 ha assorbito solo "i let di borders.ts e scene.ts", per scelta esplicita) — resta condiviso a livello di modulo; se si creassero due `GlobeEngine` insieme questi tre si calpesterebbero a vicenda. Gap noto, non ancora un problema (un solo motore montato in App.tsx) |
+| `engine/loop.ts` | `createLoop(g, onTick, ...)` leggeva `updaters`/`sceneLabels`/`yearAt`/`curYearFn`/`bordersOn`/`bordersFile`/`bordersObj`/`bordersBusy` da import live di scene.ts/borders.ts | ora li riceve per riferimento via `LoopDeps.scene`/`LoopDeps.borders`/`LoopDeps.plague` (gli stessi `SceneRuntimeState`/`BordersRuntimeState`/`PlagueRuntimeState` di GlobeEngine) — `progress`/`playing`/`curYearNum`/`rafId` restano chiusi nella closure di `createLoop`, e `GlobeEngine` tiene il `LoopHandle` in `this.loopHandle` |
+| `engine/controls.ts` | `dragging`, `autoPause`, `qTarget` — `let` di modulo esportati | **non toccato nel blocco 5** (assorbiti solo "i let di borders.ts e scene.ts", per scelta esplicita) — resta condiviso a livello di modulo; se si creassero due `GlobeEngine` insieme questi tre si calpesterebbero a vicenda. Gap noto, non ancora un problema (un solo motore montato in App.tsx) |
+| `engine/plague.ts` | — | **nessuno stato di modulo da assorbire**: scritto fin dall'inizio con lo stesso pattern del blocco 5 (`createPlagueState()` → `PlagueRuntimeState`); dal blocco 7 `GlobeEngine` la possiede come `this.plagueState`. Il `Raycaster` condiviso (`ray`, scratch) resta di modulo come `_tmp` in loop.ts: innocuo, si reimposta per intero a ogni chiamata |
 
-**Ponti ancora da collegare** (parametri/callback già pronti, in attesa del blocco o
-dell'integrazione che li userà davvero):
-- `GlobeEngine`: `pickPlagueRegionAt`/`enablePlague` sono solo commenti placeholder
-  (in attesa di `engine/plague.ts`); l'`onTap` passato a `attachPointerControls` dentro
-  `mount()` non fa ancora nulla (in attesa dello stesso); `onPlagueRegionClick` è accettato
-  nel costruttore ma nessun metodo lo chiama ancora.
-- `engine/loop.ts`: `tickPlague?` (in attesa di `engine/plague.ts`), `isIdleSpinSuppressed?`
-  ora è collegato (`GlobeEngine.setIdleSpinSuppressed(on)`), ma nessuna feature lo chiama
-  ancora (in attesa che tour/quiz, stato React/`modeSlice`, vengano collegati).
+**Ponti chiusi nel blocco 7**: `GlobeEngine` ora ha `this.plagueState`; `pickPlagueRegionAt`
+chiama `resolvePlagueRegion`; `enablePlague(on)` chiama `syncPlague` (true) o `teardownPlague`
+direttamente (false, bypassando il check "want" di syncPlague — `enablePlague(false)` deve
+smontare comunque); l'`onTap` di `attachPointerControls` dentro `mount()` ora risolve la
+regione e chiama `onPlagueRegionClick`; `tickPlague` del loop è collegato a
+`tickPlagueMarks(plagueState, t)`; `setBorders`/`setYear` richiamano `syncPlague` subito dopo
+(privato `syncPlagueWithBorders()`), invece delle due chiamate separate del v12
+(`teardownPlague()` diretto sull'off in `bToggle`, `updateBorders`+`syncPlague()` sull'on).
+
+**Ponti chiusi nel blocco 7-bis**: il cambio *automatico* dei confini dentro `engine/loop.ts`
+(quando lo scrubber/le scene fanno avanzare l'anno e `nearestFile` cambia file) ora richiama
+`syncPlague` esattamente come il v12 — `LoopDeps` ha un campo `plague` (lo stesso
+`PlagueRuntimeState` che `GlobeEngine` possiede), e dentro il `.then()` di `updateBorders` la
+chiamata a `syncPlague` avviene **incondizionatamente** (sia che il caricamento sia riuscito
+sia che sia fallito), nello stesso punto in cui nel v12 `syncPlague()` era l'ultima riga di
+*ogni* `updateBorders()`. Coperto da test: `loop.test.ts` — Peste attiva sul 1300, lo
+scrubber porta l'anno al 1500 senza passare da `setYear`/`setBorders`, il layer si smonta da solo.
+
+**Ponti ancora da collegare**:
+- `engine/loop.ts`: `isIdleSpinSuppressed?` è collegato (`GlobeEngine.setIdleSpinSuppressed(on)`),
+  ma nessuna feature lo chiama ancora (in attesa che tour/quiz, stato React/`modeSlice`,
+  vengano collegati).
+- `ensurePlagueReady` (orchestrazione: carica scena Peste + anno 1349 + lezione + ferma il
+  play) resta deliberatamente fuori dal motore — vive a livello feature/React
+  (`features/plague/`, già annotato in §1 e nell'interfaccia di comando).
 - `App.tsx`: monta/smonta `GlobeEngine` (blocco 5), ma non chiama ancora `renderScene`/
-  `setBorders`/ecc. — niente è ancora collegato allo store Redux né alle feature.
+  `setBorders`/`enablePlague`/ecc. — niente è ancora collegato allo store Redux né alle feature.
 
 ---
 
@@ -49,8 +66,8 @@ dell'integrazione che li userà davvero):
 | Confini storici | `cacheGeo`, `nearestFile`, `filesInSpan`, `geomRings`, `subjectRings`, `allRings`, `ringsToSeg`, `ensureBorders`, `updateBorders`; costanti `CDN`, `AVAILABLE`, `geoCache` | `engine/borders.ts` |
 | Wikidata (archetipo pulse) | `wdSearch`, `wdEntity`, `resolveItem` | `engine/wikidata.ts` |
 | Render scena + archetipi | `clearScene`, `renderScene` (dispatcher), `makeShip`, `placeShip`, `makeLabel` | `engine/scene.ts` + `engine/archetypes/{pulse,journey,spread,network,territory}.ts` |
-| Layer Peste — parte motore | `teardownPlague`, `syncPlague`, `resolvePlagueRegion`; la parte di `ensurePlagueReady` che attiva i confini 1349/il layer cliccabile | `engine/plague.ts` |
-| Tavole SVG (le 10+1 scene) | `svgWrap`, `plate` (+ generatori per scena) | `engine/plates.ts` *(generatori di stringhe SVG, puri)* |
+| Layer Peste — parte motore | `teardownPlague`, `syncPlague`, `resolvePlagueRegion` | `engine/plague.ts` — **fatto (blocco 6)**, collegato a `GlobeEngine` (blocco 7) |
+| Tavole SVG (le 11 scene) | `svgWrap`, `plate` (+ icone `IC_*`, palette `P_*`) | `engine/plates.ts` — **fatto (blocco 6)**, generatori di stringhe SVG puri |
 | Camera/interazione/loop | drag pointer, `flyTo`, `animate` (loop con `onTick`, issue stato-animazione) | `engine/controls.ts` + `engine/loop.ts` |
 
 > **`ensurePlagueReady` va scomposta** (era un'unica funzione mista nel v12):
@@ -116,14 +133,15 @@ React non tocca three.js: chiama metodi su un'istanza di `GlobeEngine` (ora vera
 
 - `mount(container)` / `dispose()` — **implementati**: costruiscono/distruggono `engine/globe.ts` (`createGlobe`), agganciano `engine/controls.ts` (`attachPointerControls`) e avviano/fermano `engine/loop.ts` (`createLoop(...).start()/stop()`)
 - `renderScene(spec)` — **implementato** (`engine/scene.ts`, su `this.sceneState`), chiama `onSceneReady()` al termine
-- `setBorders(on)` — **implementato**: `borders.setBordersOn(this.bordersState, on)` (visibilità) + `globe.setBordersBlend(this.globeHandle, on)` (shader)
-- `setYear(year)` — **implementato**: carica/attiva i confini per un anno specifico (v12: come faceva `ensurePlagueReady` con `updateBorders(1349)`), indipendente dallo scrubber; non accende `setBorders` da solo
+- `setBorders(on)` — **implementato**: `borders.setBordersOn(this.bordersState, on)` (visibilità) + `globe.setBordersBlend(this.globeHandle, on)` (shader) + richiama `syncPlague` (blocco 7)
+- `setYear(year)` — **implementato**: carica/attiva i confini per un anno specifico (v12: come faceva `ensurePlagueReady` con `updateBorders(1349)`), indipendente dallo scrubber; non accende `setBorders` da solo; richiama `syncPlague` (blocco 7)
 - `setTheme(theme)` — **implementato**, tema luce del globo (`globe.ts`: `"day"|"term"|"night"`)
 - `flyTo(lat, lon)` — **implementato**, passa a `engine/controls.ts`
 - `setIdleSpinSuppressed(on)` — **implementato**: sostituisce `!tourActive&&!quizActive` del v12 dentro `animate()`; nessuna feature lo chiama ancora
-- `enablePlague(on)` / `pickPlagueRegionAt(x, y)` → `name | null` — **placeholder commentati** in `GlobeEngine.ts`, in attesa di `engine/plague.ts`
+- `enablePlague(on)` — **implementato** (blocco 7): `true` chiama `syncPlague`, `false` chiama `teardownPlague` direttamente (gestisce SOLO il layer cliccabile — non carica scena/lezione/anno: quella resta `ensurePlagueReady`, orchestrazione feature)
+- `pickPlagueRegionAt(x, y)` → `name | null` — **implementato** (blocco 7): `resolvePlagueRegion` su `this.plagueState`; collegato anche all'`onTap` di `mount()`, che ora chiama `onPlagueRegionClick(name)` quando risolve una regione
 - `setPlaying(on)` / `setProgress(p)` — **implementati**, passano a `engine/loop.ts` (`LoopHandle`)
-- callback verso React (costruttore `GlobeEngineCallbacks`): `onTick({progress, playing, yearLabel})` (mai via Redux, vedi §4), `onBordersEraChange(eraLabel)` (epoca dei confini, v12: testo di `#bEra` — diversa da `onTick`), `onSceneReady()` — **collegate**; `onPlagueRegionClick(name)` — **accettata ma non ancora chiamata** (in attesa di `engine/plague.ts`)
+- callback verso React (costruttore `GlobeEngineCallbacks`): `onTick({progress, playing, yearLabel})` (mai via Redux, vedi §4), `onBordersEraChange(eraLabel)` (epoca dei confini *o della Peste*, v12: testo di `#bEra` — diversa da `onTick`), `onSceneReady()`, `onPlagueRegionClick(name)` (dall'`onTap` di `mount()`) — **tutte collegate**
 
 > **`setPresent` NON fa parte di questa interfaccia.** La modalità presentazione non tocca mai il motore: è solo `body.present` gestita da React in `features/present/` a partire da `modeSlice.present`.
 

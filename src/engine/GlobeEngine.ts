@@ -23,33 +23,37 @@ import {
   type BordersRuntimeState,
   type BordersUpdate,
 } from "./borders";
+import {
+  createPlagueState,
+  resolvePlagueRegion,
+  syncPlague,
+  teardownPlague,
+  tickPlagueMarks,
+  type PlagueRuntimeState,
+} from "./plague";
 import { createLoop, type LoopHandle, type TickPayload } from "./loop";
 
 export interface GlobeEngineCallbacks {
   /** Stato di animazione (progress/playing/anno) — mai via Redux, vedi engine/loop.ts. */
   onTick?: (payload: TickPayload) => void;
-  /** Click su una regione Peste — in attesa di engine/plague.ts (nessuno lo chiama ancora). */
+  /** Click/tap su una regione Peste risolto (engine/plague.ts: resolvePlagueRegion). */
   onPlagueRegionClick?: (name: string) => void;
   /** renderScene ha finito di costruire la nuova scena. */
   onSceneReady?: () => void;
-  /** Etichetta dell'epoca quando i confini cambiano file (v12: testo di #bEra). */
+  /** Etichetta dell'epoca quando i confini (o la Peste) cambiano — v12: testo di #bEra. */
   onBordersEraChange?: (eraLabel: string) => void;
 }
 
 export class GlobeEngine {
   private readonly sceneState: SceneRuntimeState = createSceneState();
   private readonly bordersState: BordersRuntimeState = createBordersState();
+  private readonly plagueState: PlagueRuntimeState = createPlagueState();
 
   private globeHandle: Globe | null = null;
   private loopHandle: LoopHandle | null = null;
   private detachControls: (() => void) | null = null;
   private idleSpinSuppressed = false;
 
-  // Un solo campo per tutte le callback (invece di uno per ciascuna): `onPlagueRegionClick`
-  // non viene ancora letto da nessun metodo (engine/plague.ts non esiste), e un campo
-  // privato dedicato solo a quella callback risulterebbe "mai letto" per TS — qui invece
-  // è `this.callbacks` ad essere letto (per le altre callback), quindi resta accettata
-  // nell'interfaccia pubblica senza essere già cablata.
   private readonly callbacks: GlobeEngineCallbacks;
 
   constructor(callbacks: GlobeEngineCallbacks = {}) {
@@ -69,19 +73,20 @@ export class GlobeEngine {
     g.globe.add(this.sceneState.aiLayer);
     this.globeHandle = g;
 
-    this.detachControls = attachPointerControls(container, g.globe, () => {
-      // TODO(engine/plague.ts): risolvere il tap in una regione Peste (resolvePlagueRegion)
-      // e chiamare this.callbacks.onPlagueRegionClick(name). Per ora nessuna feature lo usa
-      // ancora — nel v12 questo stesso punto instradava fra quiz/card/niente-in-tour,
-      // decisione che per RICOGNIZIONE-v12.md spetta al coordinatore in App.tsx, non qui.
+    this.detachControls = attachPointerControls(container, g.globe, (x, y) => {
+      // v12: questo stesso punto (pointerup) chiamava resolvePlagueRegion e instradava
+      // fra quiz/card/niente-in-tour — quella decisione resta al coordinatore in App.tsx
+      // (deve conoscere quiz/tour insieme), qui ci limitiamo a risolvere la regione.
+      const name = this.pickPlagueRegionAt(x, y);
+      if (name) this.callbacks.onPlagueRegionClick?.(name);
     });
 
     this.loopHandle = createLoop(
       g,
-      { scene: this.sceneState, borders: this.bordersState, makeLabel },
+      { scene: this.sceneState, borders: this.bordersState, plague: this.plagueState, makeLabel },
       (payload) => this.callbacks.onTick?.(payload),
       (eraLabel) => this.callbacks.onBordersEraChange?.(eraLabel),
-      undefined, // tickPlague: engine/plague.ts non esiste ancora
+      (t) => tickPlagueMarks(this.plagueState, t),
       () => this.idleSpinSuppressed,
     );
     this.loopHandle.start();
@@ -106,10 +111,13 @@ export class GlobeEngine {
 
   /** Confini reali on/off: visibilità del gruppo già caricato (engine/borders.ts) +
    * blend dello shader del globo (engine/globe.ts) — nel v12 erano due righe vicine
-   * nello stesso click handler (`bordersOn=...`, `modeTarget=...`). */
+   * nello stesso click handler (`bordersOn=...`, `modeTarget=...`), che poi chiamava
+   * `updateBorders`/`teardownPlague`. Qui richiamiamo syncPlague subito dopo, per
+   * restare coerenti (v12: syncPlague() era l'ultima riga di updateBorders). */
   setBorders(on: boolean): void {
     setBordersOn(this.bordersState, on);
     if (this.globeHandle) setBordersBlend(this.globeHandle, on);
+    this.syncPlagueWithBorders();
   }
 
   /** Carica/attiva i confini per un anno specifico, indipendentemente dallo scrubber
@@ -118,6 +126,7 @@ export class GlobeEngine {
   async setYear(year: number): Promise<void> {
     const result = await updateBorders(this.bordersState, year, makeLabel);
     this.applyBordersResult(result);
+    this.syncPlagueWithBorders();
   }
 
   /** Tema luce del globo (engine/globe.ts: "day" | "term" | "night"). */
@@ -146,24 +155,53 @@ export class GlobeEngine {
     this.idleSpinSuppressed = on;
   }
 
-  // --- Layer Peste — in attesa di engine/plague.ts (non ancora scritto) ---
-  //
-  // pickPlagueRegionAt(x: number, y: number): string | null {
-  //   // Raycast/picking sul layer cliccabile della Peste: ritorna il `name` (PESTE)
-  //   // sotto (x,y) sullo schermo, o null. Lo chiamerà il coordinatore in App.tsx
-  //   // dentro l'onTap passato ad attachPointerControls (vedi mount()).
-  // }
-  //
-  // enablePlague(on: boolean): void {
-  //   // Monta/smonta il layer cliccabile Peste sul globo e i marker pulsanti
-  //   // (il `tickPlague` già previsto come parametro opzionale di createLoop, qui
-  //   // passato `undefined`, andrà collegato quando questo metodo esisterà).
-  // }
+  /** Risolve un punto schermo nella regione Peste cliccata, se c'è (engine/plague.ts:
+   * resolvePlagueRegion) — ritorna solo il `name`, non l'intero PlagueRegion: è quanto
+   * basta al chiamante (`byName` in data/peste.ts resta l'unico modo per i dettagli). */
+  pickPlagueRegionAt(x: number, y: number): string | null {
+    if (!this.globeHandle) return null;
+    const hit = resolvePlagueRegion(this.plagueState, this.globeHandle, x, y);
+    return hit ? hit.name : null;
+  }
+
+  /**
+   * Monta/smonta SOLO la parte motore del layer Peste (engine/plague.ts) — non carica
+   * la scena Peste, la lezione, l'anno 1349 né ferma il play: quella è orchestrazione
+   * (v12: `ensurePlagueReady`) e resta a livello feature/React per un blocco successivo.
+   *
+   * `on=true` chiama `syncPlague`, che da solo decide se costruire/mostrare il layer
+   * (richiede `bordersOn` + confini sul 1300, già in cache) o non fare nulla. `on=false`
+   * chiama `teardownPlague` direttamente, **non** `syncPlague`: deve smontare il layer
+   * comunque, anche se `bordersOn`/`bordersFile` farebbero risultare "voluto" un layer
+   * attivo (v12: il ramo "off" di `bToggle` chiamava `teardownPlague()` direttamente,
+   * non passava da `syncPlague`).
+   */
+  enablePlague(on: boolean): void {
+    if (on) {
+      this.syncPlagueWithBorders();
+    } else if (this.globeHandle) {
+      teardownPlague(this.plagueState, this.globeHandle.globe);
+    }
+  }
 
   private applyBordersResult(result: BordersUpdate | null): void {
     if (!result || !this.globeHandle) return;
     this.globeHandle.globe.add(result.group);
     if (result.previousGroup) this.globeHandle.globe.remove(result.previousGroup);
     this.callbacks.onBordersEraChange?.(result.eraLabel);
+  }
+
+  /** Richiama syncPlague (engine/plague.ts) per restare coerenti con bordersState.on/file
+   * — nel v12 era l'ultima riga di `updateBorders`, quindi richiamata ad ogni cambio di
+   * confini; qui `setBorders`/`setYear` sono gli unici due comandi pubblici che possono
+   * cambiare `bordersState.on`/`bordersState.file`, quindi è qui che la richiamiamo.
+   * syncPlague gestisce già da solo sia il teardown (confini spenti o file diverso dal
+   * 1300) sia la costruzione/visibilità (confini accesi sul 1300): non serve replicare i
+   * due rami separati del v12 (bToggle chiamava teardownPlague() direttamente sull'off,
+   * updateBorders+syncPlague sull'on) — una chiamata sola, idempotente, basta. */
+  private syncPlagueWithBorders(): void {
+    if (!this.globeHandle) return;
+    const result = syncPlague(this.plagueState, this.globeHandle.globe, this.bordersState);
+    if (result) this.callbacks.onBordersEraChange?.(result.eraLabel);
   }
 }

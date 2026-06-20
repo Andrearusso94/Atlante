@@ -44,6 +44,9 @@ export interface Globe {
   renderer: WebGLRenderer;
   /** Il Group ruotabile: ci stanno dentro la mesh della Terra, i confini, aiLayer. */
   globe: Group;
+  /** La mesh della Terra: bersaglio del raycast per il click/tap (v12: resolvePlagueRegion
+   * la intersecava direttamente, essendo una variabile globale visibile a tutto lo script). */
+  earthMesh: Mesh;
   uniforms: GlobeUniforms;
   sun: Vector3;
   sunTarget: Vector3;
@@ -169,6 +172,7 @@ export function createGlobe(container: HTMLElement): Globe {
     camera,
     renderer,
     globe,
+    earthMesh,
     uniforms,
     sun,
     sunTarget,
