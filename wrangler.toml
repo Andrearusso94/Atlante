@@ -1,0 +1,36 @@
+# wrangler.toml — Atlante Sincronico (Workers + Static Assets)
+# Serve la build di Vite (dist/) E il proxy IA (worker/index.ts) sullo stesso dominio.
+
+name = "atlante-sincronico"
+main = "worker/index.ts"
+compatibility_date = "2026-06-01"
+
+# --- Asset statici: la SPA buildata da Vite ---
+# Gli asset vengono serviti per primi; /api/* non ha asset, quindi cade sul Worker.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# --- KV: cache delle risposte IA (issue A2) ---
+# Crea il namespace e incolla qui l'id:
+#   npx wrangler kv namespace create CACHE
+[[kv_namespaces]]
+binding = "CACHE"
+id = "INCOLLA_QUI_ID_CACHE"
+
+# --- KV: contatori per il rate limiting (issue A1) ---
+#   npx wrangler kv namespace create RATE
+[[kv_namespaces]]
+binding = "RATE"
+id = "INCOLLA_QUI_ID_RATE"
+
+# --- Variabili opzionali (i default sono nel Worker; scommenta per cambiarli) ---
+[vars]
+# MODEL = "claude-sonnet-4-6"
+# RATE_LIMIT = "30"
+# RATE_WINDOW_S = "3600"
+# CACHE_TTL_GENERA_S = "86400"
+# CACHE_TTL_LEZIONE_S = "604800"
+
+# NB: ANTHROPIC_API_KEY è un SECRET, NON va qui.
+#   npx wrangler secret put ANTHROPIC_API_KEY

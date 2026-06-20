@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlante Sincronico — generatore IA + confini reali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--space:#05080f;--panel:rgba(15,22,38,.66);--border:rgba(120,150,200,.18);
+    --gold:#e3ac46;--gold-2:#f3d28f;--cyan:#6fd3e0;--paper:#eef1f6;--dim:#9aa6bd;}
+  *{box-sizing:border-box;}html,body{margin:0;height:100%;overflow:hidden;background:var(--space);}
+  body{font-family:"Inter",system-ui,sans-serif;color:var(--paper);}
+  #scene{position:fixed;inset:0;cursor:grab;}#scene:active{cursor:grabbing;}
+  #scene::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 50% 42%,#0c1730 0%,#05080f 60%,#02040a 100%);}
+  .glass{background:var(--panel);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(14px) saturate(120%);-webkit-backdrop-filter:blur(14px) saturate(120%);box-shadow:0 20px 60px rgba(0,0,0,.45);}
+  #head{position:fixed;top:18px;left:18px;z-index:10;padding:16px 20px;max-width:300px;}
+  .eyebrow{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin:0 0 6px;}
+  h1{font-family:"Fraunces",serif;font-weight:600;font-size:20px;margin:0;line-height:1.1;}
+  .sub{font-size:11.5px;color:var(--dim);margin:7px 0 0;line-height:1.5;}
+  #ctrlR{position:fixed;top:18px;right:18px;z-index:13;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+  #themeBox{padding:7px;display:flex;gap:3px;}
+  #themeBox button{background:transparent;color:var(--dim);border:none;padding:7px 12px;border-radius:10px;font-size:11.5px;font-family:inherit;cursor:pointer;transition:all .18s;}
+  #themeBox button[aria-pressed="true"]{background:rgba(227,172,70,.16);color:var(--gold-2);}
+  #bordersBox{padding:9px 12px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;max-width:240px;}
+  .swt{display:flex;align-items:center;gap:9px;background:transparent;border:none;color:var(--dim);font-family:inherit;font-size:12px;cursor:pointer;}
+  .swt .sw{width:34px;height:18px;border-radius:999px;background:rgba(255,255,255,.14);position:relative;transition:background .2s;}
+  .swt .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--dim);transition:all .2s;}
+  .swt[aria-pressed="true"]{color:var(--gold-2);}
+  .swt[aria-pressed="true"] .sw{background:rgba(227,172,70,.5);}
+  .swt[aria-pressed="true"] .sw::after{left:18px;background:var(--gold);}
+  #bEra{font-size:10px;color:var(--cyan);min-height:12px;}
+  #aiBar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:12;width:640px;max-width:94vw;padding:14px 14px 12px;}
+  .aiTop{display:flex;gap:8px;align-items:center;}
+  #q{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--paper);border-radius:11px;padding:12px 14px;font-family:inherit;font-size:14px;outline:none;}
+  #q:focus{border-color:var(--gold);}#q::placeholder{color:var(--dim);}
+  #gen{background:var(--gold);color:var(--space);border:none;border-radius:11px;padding:12px 18px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  #gen:disabled{opacity:.5;cursor:default;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .chips button{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid transparent;padding:6px 11px;border-radius:999px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .chips button:hover{border-color:var(--gold);color:var(--gold-2);}
+  #timeline{position:fixed;bottom:122px;left:50%;transform:translateX(-50%);z-index:11;width:640px;max-width:94vw;padding:10px 16px;display:none;align-items:center;gap:12px;}
+  #timeline.on{display:flex;}
+  #play{background:rgba(255,255,255,.08);color:var(--paper);border:1px solid var(--border);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:14px;flex:0 0 auto;}
+  #scrub{-webkit-appearance:none;appearance:none;flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.16);outline:none;}
+  #scrub::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--gold);border:3px solid var(--space);box-shadow:0 0 0 1px var(--gold);cursor:pointer;}
+  #scrub::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gold);border:3px solid var(--space);cursor:pointer;}
+  #curYear{font-family:"Fraunces",serif;font-size:22px;color:var(--gold);min-width:96px;text-align:right;flex:0 0 auto;}
+  #lesson{position:fixed;top:150px;right:18px;bottom:200px;width:330px;max-width:86vw;z-index:10;padding:18px 18px 8px;display:flex;flex-direction:column;}
+  #lessonBody{overflow-y:auto;padding-right:6px;}
+  .lTitle{font-family:"Fraunces",serif;font-size:19px;font-weight:600;line-height:1.15;margin:0;}
+  .lPeriod{font-size:11.5px;color:var(--cyan);margin:5px 0 0;letter-spacing:.04em;}
+  .lSum{font-size:13px;color:var(--paper);line-height:1.55;margin:12px 0 0;}
+  .lH{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:18px 0 8px;}
+  .card{border:1px solid var(--border);border-radius:10px;margin:0 0 8px;background:rgba(255,255,255,.03);}
+  .card-h{display:flex;gap:10px;align-items:baseline;padding:10px 12px;cursor:pointer;font-size:12.5px;line-height:1.4;}
+  .card-h b{color:var(--gold-2);font-family:"Fraunces",serif;flex:0 0 54px;}
+  .card-h .ev{flex:1;}
+  .card-x{flex:0 0 auto;color:var(--cyan);font-size:16px;line-height:1;}
+  .card:hover{background:rgba(227,172,70,.06);border-color:rgba(227,172,70,.25);}
+  .cardnote{color:var(--dim);}
+
+  /* la scena scorre e si sfoca quando la modale è aperta */
+  #scene,#head,#ctrlR,#lesson,#timeline,#aiBar{transition:transform .5s cubic-bezier(.22,1,.36,1),filter .5s ease,opacity .4s ease;}
+  body.modal-open #scene{transform:translateX(-13%) scale(1.04);filter:blur(3px) brightness(.7);}
+  body.modal-open #head,body.modal-open #ctrlR,body.modal-open #lesson,body.modal-open #timeline,body.modal-open #aiBar{opacity:.25;filter:blur(2px);pointer-events:none;}
+
+  #overlay{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:flex-end;
+    background:rgba(3,6,12,.45);backdrop-filter:blur(2px);}
+  #overlay.on{display:flex;}
+  #modal{width:560px;max-width:92vw;max-height:88vh;margin-right:4vw;overflow-y:auto;padding:30px 34px 34px;
+    border-radius:20px;transform:translateX(40px) scale(.97);opacity:0;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .4s ease;}
+  #overlay.on #modal{transform:none;opacity:1;}
+  .m-close{position:absolute;top:18px;right:20px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--paper);
+    width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;}
+  .m-eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin:0;}
+  .m-title{font-family:"Fraunces",serif;font-weight:600;font-size:30px;line-height:1.1;margin:8px 0 0;color:var(--paper);}
+  .m-body{margin-top:6px;}
+  .m-body h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-2);margin:22px 0 8px;}
+  .m-body p{font-size:14.5px;line-height:1.65;color:var(--paper);margin:0 0 10px;}
+  .m-body .quote{border-left:2px solid var(--gold);padding:4px 0 4px 16px;font-style:italic;color:var(--gold-2);font-size:14.5px;line-height:1.6;}
+  .m-body ul{margin:0;padding-left:18px;}
+  .m-body li{font-size:14px;line-height:1.6;margin:0 0 6px;}
+  .m-load{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:14px;padding:30px 0;}
+  .m-load .spin{width:18px;height:18px;}
+  .m-warn{font-size:11.5px;color:var(--gold-2);background:rgba(227,172,70,.1);border:1px solid rgba(227,172,70,.25);border-radius:9px;padding:10px 12px;margin-top:22px;line-height:1.45;}
+  @media (max-width:760px){#overlay{justify-content:center;}#modal{margin-right:0;}body.modal-open #scene{transform:scale(1.04);}}
+  .kp{font-size:12.5px;line-height:1.45;margin:0 0 7px;padding-left:14px;position:relative;}
+  .kp::before{content:"—";position:absolute;left:0;color:var(--cyan);}
+  .q{font-size:12.5px;line-height:1.45;margin:0 0 8px;font-style:italic;}
+  .warn{font-size:11px;color:var(--gold-2);background:rgba(227,172,70,.1);border:1px solid rgba(227,172,70,.25);border-radius:9px;padding:9px 11px;margin-top:14px;line-height:1.45;}
+  .placeholder{color:var(--dim);font-size:13px;line-height:1.6;}
+  .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--gold);border-radius:50%;display:inline-block;vertical-align:-2px;margin-right:7px;animation:sp .8s linear infinite;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+  @media (max-width:880px){#lesson{display:none;}#timeline,#aiBar{width:94vw;}#head{display:none;}}
+
+  /* ===== CARD "RULLINO" PESTE NERA (stile post Instagram) ===== */
+  #igOverlay{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+    background:rgba(3,6,12,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+  #igOverlay.on{display:flex;}
+  #igCard{width:384px;max-width:93vw;max-height:93vh;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;
+    transform:translateY(20px) scale(.97);opacity:0;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .4s ease;}
+  #igOverlay.on #igCard{transform:none;opacity:1;}
+  .ig-head{display:flex;align-items:center;gap:11px;padding:13px 14px 12px;border-bottom:1px solid var(--border);}
+  .ig-av{width:42px;height:42px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    background:radial-gradient(circle at 35% 28%,rgba(243,210,143,.22),rgba(15,22,38,.9));
+    border:1.5px solid var(--gold);box-shadow:0 0 0 2px rgba(227,172,70,.12);}
+  .ig-av svg{width:23px;height:23px;}
+  .ig-id{flex:1;min-width:0;}
+  .ig-name{font-family:"Fraunces",serif;font-size:15.5px;font-weight:600;line-height:1.1;color:var(--paper);}
+  .ig-sub{font-size:10.5px;color:var(--cyan);letter-spacing:.05em;margin-top:3px;display:flex;align-items:center;gap:5px;}
+  .ig-sub svg{width:11px;height:11px;flex:0 0 auto;}
+  .ig-x{flex:0 0 auto;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--paper);
+    width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;}
+  .ig-stage{position:relative;aspect-ratio:4/5;background:var(--space);overflow:hidden;touch-action:pan-y;}
+  .ig-track{display:flex;height:100%;transition:transform .45s cubic-bezier(.22,1,.36,1);}
+  .ig-slide{flex:0 0 100%;height:100%;position:relative;}
+  .ig-slide svg{width:100%;height:100%;display:block;}
+  .ig-dots{position:absolute;top:13px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3;}
+  .ig-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);transition:all .25s;}
+  .ig-dots i.on{background:var(--gold);width:18px;border-radius:3px;}
+  .ig-tag{position:absolute;left:12px;top:12px;z-index:3;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold-2);background:rgba(5,8,15,.5);border:1px solid rgba(227,172,70,.3);
+    padding:5px 9px;border-radius:999px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+  .ig-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:34px;height:34px;border-radius:50%;
+    background:rgba(5,8,15,.42);border:1px solid var(--border);color:var(--paper);cursor:pointer;
+    display:grid;place-items:center;font-size:15px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:all .15s;}
+  .ig-nav:hover{background:rgba(227,172,70,.28);border-color:var(--gold);}
+  .ig-prev{left:10px;}.ig-next{right:10px;}
+  .ig-nav.hide{opacity:0;pointer-events:none;}
+  .ig-capover{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:30px 14px 13px;
+    background:linear-gradient(to top,rgba(5,8,15,.94),rgba(5,8,15,.55) 55%,rgba(5,8,15,0));}
+  .ig-capt{font-family:"Fraunces",serif;font-size:16.5px;color:var(--paper);line-height:1.18;}
+  .ig-actions{display:flex;align-items:center;gap:15px;padding:11px 14px 2px;color:var(--paper);}
+  .ig-actions svg{width:23px;height:23px;cursor:pointer;transition:transform .15s,color .15s;}
+  .ig-actions svg:hover{transform:scale(1.12);color:var(--gold);}
+  .ig-actions .heart.liked{color:var(--gold);fill:var(--gold);}
+  .ig-count{margin-left:auto;font-size:11px;color:var(--dim);letter-spacing:.03em;}
+  .ig-body{padding:6px 16px 16px;overflow-y:auto;}
+  .ig-text{font-size:13.5px;line-height:1.62;color:var(--paper);margin:0;}
+  .ig-text b{color:var(--gold-2);font-family:"Fraunces",serif;font-weight:600;}
+  .ig-foot{font-size:10.5px;color:var(--gold-2);background:rgba(227,172,70,.1);border:1px solid rgba(227,172,70,.22);
+    border-radius:9px;padding:8px 10px;margin-top:14px;line-height:1.45;}
+  @media (max-width:760px){#igCard{width:94vw;}}
+
+  /* ===== STRUMENTI PER LA CLASSE ===== */
+  #toolBox{position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:13;padding:10px;display:flex;flex-direction:column;gap:5px;width:170px;}
+  .tool-h{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);padding:2px 4px 5px;}
+  .tool-b{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);color:var(--paper);border:1px solid var(--border);
+    border-radius:10px;padding:9px 11px;font-family:inherit;font-size:12.5px;cursor:pointer;text-align:left;transition:all .15s;}
+  .tool-b:hover{border-color:var(--gold);color:var(--gold-2);background:rgba(227,172,70,.08);}
+  .tool-b .tb-i{font-size:14px;flex:0 0 auto;line-height:1;}
+  .tool-b.act{border-color:var(--gold);color:var(--gold-2);background:rgba(227,172,70,.16);}
+
+  /* barra tour */
+  #tourBar{position:fixed;bottom:190px;left:50%;transform:translateX(-50%) translateY(10px);z-index:60;
+    padding:8px 10px;display:none;align-items:center;gap:8px;opacity:0;transition:opacity .3s,transform .3s;}
+  #tourBar.on{display:flex;opacity:1;transform:translateX(-50%) translateY(0);}
+  .tour-nav{background:rgba(255,255,255,.08);color:var(--paper);border:1px solid var(--border);width:34px;height:34px;
+    border-radius:50%;cursor:pointer;font-size:14px;flex:0 0 auto;display:grid;place-items:center;transition:all .15s;}
+  .tour-nav:hover{border-color:var(--gold);color:var(--gold-2);background:rgba(227,172,70,.14);}
+  .tour-id{padding:0 6px;min-width:120px;}
+  .tour-label{font-family:"Fraunces",serif;font-size:15px;color:var(--gold-2);line-height:1.1;}
+  .tour-step{font-size:10px;color:var(--dim);letter-spacing:.04em;margin-top:2px;}
+  .tour-x{background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:4px 6px;flex:0 0 auto;}
+  .tour-x:hover{color:var(--paper);}
+
+  /* barra quiz */
+  #quizBar{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-10px);z-index:14;
+    width:430px;max-width:94vw;padding:13px 15px;display:none;opacity:0;transition:opacity .3s,transform .3s;}
+  #quizBar.on{display:block;opacity:1;transform:translateX(-50%) translateY(0);}
+  .quiz-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .quiz-eyebrow{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);}
+  .quiz-r{display:flex;gap:5px;flex:0 0 auto;}
+  .quiz-mini{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--paper);width:26px;height:26px;
+    border-radius:50%;cursor:pointer;font-size:12px;line-height:1;}
+  .quiz-mini:hover{border-color:var(--gold);color:var(--gold-2);}
+  .quiz-q{font-family:"Fraunces",serif;font-size:16px;color:var(--paper);line-height:1.25;margin-top:8px;}
+  .quiz-meta{font-size:11px;color:var(--dim);margin-top:6px;letter-spacing:.03em;}
+  .quiz-meta b{color:var(--gold-2);}
+  .quiz-fx{font-size:12.5px;font-weight:500;margin-top:7px;min-height:16px;line-height:1.3;transition:color .2s;}
+  .quiz-fx.good{color:#7fd6a0;}
+  .quiz-fx.bad{color:#e8896f;}
+
+  /* ===== MODALITÀ PRESENTAZIONE / LIM ===== */
+  body.present #head,body.present #ctrlR,body.present #lesson,body.present #aiBar{
+    opacity:0;pointer-events:none;transition:opacity .4s;}
+  body.present #toolBox{left:50%;top:auto;transform:translateX(-50%);bottom:20px;flex-direction:row;width:auto;align-items:center;}
+  body.present #toolBox .tool-h{display:none;}
+  body.present #igCard{width:460px;}
+  body.present .ig-name{font-size:18px;}
+  body.present .ig-capt{font-size:19px;}
+  body.present .ig-text{font-size:15.5px;line-height:1.7;}
+  body.present .ig-foot{font-size:11.5px;}
+  body.present #quizBar{width:560px;top:26px;}
+  body.present .quiz-q{font-size:19px;}
+  body.present .quiz-fx{font-size:14.5px;}
+  body.present .tour-label{font-size:17px;}
+  body.present #curYear{font-size:26px;}
+
+  /* durante il tour: sfondo card più leggero per vedere il globo che ruota dietro */
+  body.touring #igOverlay{background:rgba(3,6,12,.28);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+</style>
+</head>
+<body>
+<div id="scene" role="application" aria-label="Globo 3D"></div>
+<div id="head" class="glass">
+  <p class="eyebrow">Atlante Sincronico · IA</p>
+  <h1>Scrivi la storia, guardala</h1>
+  <p class="sub">Descrivi cosa mostrare. Per i territori l'IA sceglie il soggetto e i confini reali vengono dal dataset storico.</p>
+</div>
+
+<div id="ctrlR">
+  <div id="themeBox" class="glass" role="group" aria-label="Tema">
+    <button data-theme="day" aria-pressed="false">☀︎</button>
+    <button data-theme="term" aria-pressed="true">◐</button>
+    <button data-theme="night" aria-pressed="false">☾</button>
+  </div>
+  <div id="bordersBox" class="glass">
+    <button id="bToggle" class="swt" aria-pressed="false"><span>Confini reali dell'epoca</span><span class="sw"></span></button>
+    <div id="bEra"></div>
+  </div>
+</div>
+
+<div id="lesson" class="glass">
+  <div id="lessonBody">
+    <div class="placeholder"><p style="margin:0 0 12px"><b style="font-family:Fraunces,serif;color:var(--paper);font-size:15px">Pronto per la lezione.</b></p>
+      Scrivi una richiesta in basso o tocca un esempio. Attiva lo switch in alto a destra per vedere la mappa politica reale dell'epoca.</div>
+  </div>
+</div>
+
+<div id="timeline" class="glass">
+  <button id="play" aria-label="Play/Pausa">❚❚</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Avanzamento" />
+  <div id="curYear">—</div>
+</div>
+
+<div id="aiBar" class="glass">
+  <div class="aiTop">
+    <input id="q" type="text" autocomplete="off" placeholder="es. l'espansione dell'impero romano · i viaggi di Colombo · la peste nera" />
+    <button id="gen">Genera</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="chips" style="margin-top:6px">
+    <button id="saveBtn">⤓ Salva lezione</button>
+    <button id="loadBtn">⤴ Carica lezione</button>
+    <input id="loadFile" type="file" accept="application/json" style="display:none" />
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="modal" class="glass" role="dialog" aria-modal="true">
+    <button class="m-close" id="mClose" aria-label="Chiudi">✕</button>
+    <p class="m-eyebrow" id="mEyebrow"></p>
+    <h2 class="m-title" id="mTitle"></h2>
+    <div class="m-body" id="mBody"></div>
+  </div>
+</div>
+
+<div id="igOverlay">
+  <div id="igCard" class="glass" role="dialog" aria-modal="true" aria-label="Scheda peste nera">
+    <div class="ig-head">
+      <div class="ig-av" id="igAv"></div>
+      <div class="ig-id">
+        <div class="ig-name" id="igName"></div>
+        <div class="ig-sub" id="igSub"></div>
+      </div>
+      <button class="ig-x" id="igClose" aria-label="Chiudi">✕</button>
+    </div>
+    <div class="ig-stage" id="igStage">
+      <div class="ig-dots" id="igDots"></div>
+      <div class="ig-track" id="igTrack"></div>
+      <button class="ig-nav ig-prev" id="igPrev" aria-label="Precedente">‹</button>
+      <button class="ig-nav ig-next" id="igNext" aria-label="Successiva">›</button>
+      <div class="ig-capover"><div class="ig-capt" id="igCapt"></div></div>
+    </div>
+    <div class="ig-actions" id="igActions"></div>
+    <div class="ig-body">
+      <p class="ig-text" id="igText"></p>
+      <div class="ig-foot">☩ Quadro storico sintetico sulla peste nera (1347–1351) — illustrazioni d'autore, non fotografie d'epoca. Verifica le date prima dell'uso in classe.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STRUMENTI PER LA CLASSE ===== -->
+<div id="toolBox" class="glass" role="group" aria-label="Strumenti per la classe">
+  <div class="tool-h">Aula</div>
+  <button id="toolPresent" class="tool-b"><span class="tb-i">🖥</span><span>Presentazione</span></button>
+  <button id="toolTour" class="tool-b"><span class="tb-i">🎬</span><span>Tour guidato</span></button>
+  <button id="toolQuiz" class="tool-b"><span class="tb-i">❓</span><span>Quiz</span></button>
+</div>
+
+<!-- barra del tour guidato -->
+<div id="tourBar" class="glass" role="group" aria-label="Tour guidato">
+  <button id="tourPrev" class="tour-nav" aria-label="Tappa precedente">‹</button>
+  <button id="tourPlay" class="tour-nav" aria-label="Play/Pausa">❚❚</button>
+  <button id="tourNext" class="tour-nav" aria-label="Tappa successiva">›</button>
+  <div class="tour-id">
+    <div id="tourLabel" class="tour-label">—</div>
+    <div id="tourStep" class="tour-step">Tappa 1 / 9</div>
+  </div>
+  <button id="tourExit" class="tour-x" aria-label="Esci dal tour">✕</button>
+</div>
+
+<!-- barra del quiz -->
+<div id="quizBar" class="glass" role="group" aria-label="Quiz">
+  <div class="quiz-top">
+    <div class="quiz-eyebrow">❓ Quiz · clicca il territorio giusto</div>
+    <div class="quiz-r"><button id="quizRestart" class="quiz-mini" aria-label="Ricomincia">↻</button>
+      <button id="quizExit" class="quiz-mini" aria-label="Chiudi quiz">✕</button></div>
+  </div>
+  <div id="quizQ" class="quiz-q">—</div>
+  <div id="quizMeta" class="quiz-meta"></div>
+  <div id="quizFx" class="quiz-fx"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ===========================================================================
+   GENERATORE IA + CONFINI REALI
+   IA -> scene spec (per i territori: solo soggetto+alias) -> data layer carica
+   i GeoJSON reali da historical-basemaps -> renderer per archetipo.
+   Switch "Confini reali dell'epoca" = mappa politica reale dell'anno mostrato.
+   =========================================================================== */
+const CDN="https://cdn.jsdelivr.net/gh/aourednik/historical-basemaps@master/geojson/";
+const AVAILABLE=[
+  {y:-123000,f:"world_bc123000.geojson"},{y:-10000,f:"world_bc10000.geojson"},{y:-8000,f:"world_bc8000.geojson"},
+  {y:-5000,f:"world_bc5000.geojson"},{y:-4000,f:"world_bc4000.geojson"},{y:-3000,f:"world_bc3000.geojson"},
+  {y:-2000,f:"world_bc2000.geojson"},{y:-1500,f:"world_bc1500.geojson"},{y:-1000,f:"world_bc1000.geojson"},
+  {y:-700,f:"world_bc700.geojson"},{y:-500,f:"world_bc500.geojson"},{y:-400,f:"world_bc400.geojson"},
+  {y:-323,f:"world_bc323.geojson"},{y:-300,f:"world_bc300.geojson"},{y:-200,f:"world_bc200.geojson"},
+  {y:-100,f:"world_bc100.geojson"},{y:-1,f:"world_bc1.geojson"},{y:100,f:"world_100.geojson"},
+  {y:200,f:"world_200.geojson"},{y:300,f:"world_300.geojson"},{y:400,f:"world_400.geojson"},
+  {y:500,f:"world_500.geojson"},{y:600,f:"world_600.geojson"},{y:700,f:"world_700.geojson"},
+  {y:800,f:"world_800.geojson"},{y:900,f:"world_900.geojson"},{y:1000,f:"world_1000.geojson"},
+  {y:1100,f:"world_1100.geojson"},{y:1200,f:"world_1200.geojson"},{y:1279,f:"world_1279.geojson"},
+  {y:1300,f:"world_1300.geojson"},{y:1400,f:"world_1400.geojson"},{y:1492,f:"world_1492.geojson"},
+  {y:1500,f:"world_1500.geojson"},{y:1530,f:"world_1530.geojson"},{y:1600,f:"world_1600.geojson"},
+  {y:1650,f:"world_1650.geojson"},{y:1700,f:"world_1700.geojson"},{y:1715,f:"world_1715.geojson"},
+  {y:1783,f:"world_1783.geojson"},{y:1800,f:"world_1800.geojson"},{y:1815,f:"world_1815.geojson"},
+  {y:1880,f:"world_1880.geojson"},{y:1900,f:"world_1900.geojson"},{y:1914,f:"world_1914.geojson"},
+  {y:1920,f:"world_1920.geojson"},{y:1930,f:"world_1930.geojson"},{y:1938,f:"world_1938.geojson"},
+  {y:1945,f:"world_1945.geojson"},{y:1960,f:"world_1960.geojson"},{y:1994,f:"world_1994.geojson"},
+  {y:2000,f:"world_2000.geojson"},{y:2010,f:"world_2010.geojson"}];
+
+/* ---- scena ---- */
+const scene=new THREE.Scene();const container=document.getElementById("scene");
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.1,1000);camera.position.set(0,0,2.7);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
+container.appendChild(renderer.domElement);
+const globe=new THREE.Group();scene.add(globe);
+const aiLayer=new THREE.Group();globe.add(aiLayer);
+const R=1;
+const sun=new THREE.Vector3(1,.18,.30).normalize(),sunTarget=sun.clone();
+const uniforms={dayTex:{value:null},nightTex:{value:null},sunDir:{value:sun},hasTex:{value:0},mode:{value:0}};
+const earthMat=new THREE.ShaderMaterial({uniforms,
+  vertexShader:`varying vec2 vUv;varying vec3 vN;void main(){vUv=uv;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform sampler2D dayTex;uniform sampler2D nightTex;uniform vec3 sunDir;uniform float hasTex;uniform float mode;varying vec2 vUv;varying vec3 vN;
+    void main(){float c=dot(normalize(vN),normalize(sunDir));float a=smoothstep(-.12,.22,c);
+      vec3 real,atlas;
+      if(hasTex>.5){
+        vec3 dt=texture2D(dayTex,vUv).rgb;vec3 nt=texture2D(nightTex,vUv).rgb*1.5;
+        real=mix(nt,dt,a);
+        float luma=dot(dt,vec3(.299,.587,.114));
+        float land=max(smoothstep(.02,.12,max(dt.r,dt.g)-dt.b),smoothstep(.75,.9,luma));
+        vec3 sea=vec3(.13,.20,.31);vec3 ld=vec3(.40,.44,.50);
+        atlas=mix(sea,ld,land)*mix(.85,1.12,a);
+      }else{
+        real=mix(vec3(.03,.05,.10),vec3(.16,.33,.52),a);
+        atlas=vec3(.22,.30,.42)*mix(.85,1.1,a);
+      }
+      gl_FragColor=vec4(mix(real,atlas,mode),1.);}`});
+const earthMesh=new THREE.Mesh(new THREE.SphereGeometry(R,64,64),earthMat);globe.add(earthMesh);
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.18,48,48),new THREE.ShaderMaterial({side:THREE.BackSide,transparent:true,
+  vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vN;void main(){float i=pow(.62-dot(vN,vec3(0.,0.,1.)),2.4);gl_FragColor=vec4(.40,.68,.95,1.)*i;}`})));
+(function(){const g=new THREE.BufferGeometry(),n=1200,p=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const r=40+Math.random()*40,t=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+    p[i*3]=r*Math.sin(ph)*Math.cos(t);p[i*3+1]=r*Math.cos(ph);p[i*3+2]=r*Math.sin(ph)*Math.sin(t);}
+  g.setAttribute("position",new THREE.BufferAttribute(p,3));scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xafc6ff,size:.12,transparent:true,opacity:.8})));})();
+const texL=new THREE.TextureLoader();texL.setCrossOrigin("anonymous");let ld=0;const rdy=()=>{if(++ld>=2)uniforms.hasTex.value=1;};
+texL.load("https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg",t=>{uniforms.dayTex.value=t;rdy();},undefined,()=>{});
+texL.load("https://threejs.org/examples/textures/planets/earth_lights_2048.png",t=>{uniforms.nightTex.value=t;rdy();},undefined,()=>{});
+
+/* ---- helpers geo ---- */
+function ll2v(lat,lon,r){const phi=(90-lat)*Math.PI/180,th=(lon+180)*Math.PI/180;return new THREE.Vector3(-(r*Math.sin(phi)*Math.cos(th)),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(th));}
+function lonlat2v(lon,lat,r){return ll2v(lat,lon,r);}
+function slerp(a,b,f){const va=a.clone(),vb=b.clone();let d=THREE.MathUtils.clamp(va.dot(vb),-1,1),om=Math.acos(d),s=Math.sin(om);if(s<1e-6)return va;return va.multiplyScalar(Math.sin((1-f)*om)/s).add(vb.clone().multiplyScalar(Math.sin(f*om)/s)).normalize();}
+function pathWp(wps,per){const v=wps.map(w=>ll2v(w[0],w[1],1).normalize()),o=[];for(let i=0;i<v.length-1;i++)for(let k=0;k<per;k++)o.push(slerp(v[i],v[i+1],k/per));o.push(v[v.length-1]);return o;}
+function arc(a,b,h,seg){const va=ll2v(a[0],a[1],1).normalize(),vb=ll2v(b[0],b[1],1).normalize(),o=[];for(let i=0;i<=seg;i++){const t=i/seg,p=slerp(va,vb,t);p.multiplyScalar(R*(1+h*Math.sin(Math.PI*t)));o.push(p);}return o;}
+/* inverso di ll2v: vettore unitario locale -> [lat,lon] */
+function v2ll(v){const u=v.clone().normalize();
+  const lat=90-Math.acos(THREE.MathUtils.clamp(u.y,-1,1))*180/Math.PI;
+  let lon=Math.atan2(u.z,-u.x)*180/Math.PI-180;while(lon<-180)lon+=360;while(lon>180)lon-=360;return[lat,lon];}
+/* point-in-polygon (ray casting) su anello [lon,lat] */
+function pip(lon,lat,ring){let inside=false,n=ring.length,j=n-1;
+  for(let i=0;i<n;i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+    if(((yi>lat)!==(yj>lat))&&(lon<(xj-xi)*(lat-yi)/((yj-yi)||1e-12)+xi))inside=!inside;j=i;}return inside;}
+/* distanza angolare (gradi) tra due punti lat/lon */
+function gcDeg(la1,lo1,la2,lo2){const a=ll2v(la1,lo1,1).normalize(),b=ll2v(la2,lo2,1).normalize();
+  return Math.acos(THREE.MathUtils.clamp(a.dot(b),-1,1))*180/Math.PI;}
+
+/* ---- data layer: GeoJSON reali ---- */
+const geoCache={};
+async function cacheGeo(file){if(geoCache[file])return geoCache[file];const r=await fetch(CDN+file);if(!r.ok)throw new Error(file+" "+r.status);const j=await r.json();geoCache[file]=j;return j;}
+function nearestFile(year){let b=AVAILABLE[0];for(const a of AVAILABLE)if(Math.abs(a.y-year)<Math.abs(b.y-year))b=a;return b;}
+function filesInSpan(y0,y1,maxN){let inb=AVAILABLE.filter(a=>a.y>=y0&&a.y<=y1);if(!inb.length)inb=[nearestFile((y0+y1)/2)];
+  if(inb.length>maxN){const out=[],step=(inb.length-1)/(maxN-1);for(let i=0;i<maxN;i++)out.push(inb[Math.round(i*step)]);return out.filter((v,i,a)=>a.indexOf(v)===i);}return inb;}
+function geomRings(g,cap){const polys=g.type==="MultiPolygon"?g.coordinates:g.type==="Polygon"?[g.coordinates]:[];const rings=[];
+  for(const poly of polys){let r=poly[0];if(!r||r.length<3)continue;if(r.length>cap){const st=Math.ceil(r.length/cap),r2=[];for(let i=0;i<r.length;i+=st)r2.push(r[i]);r=r2;}rings.push(r);}return rings;}
+function subjectRings(fc,aliases,cap){const al=aliases.map(a=>a.toLowerCase()),rings=[];
+  for(const ft of fc.features||[]){const nm=((ft.properties&&ft.properties.NAME)||"").toLowerCase();if(!nm)continue;
+    if(al.includes(nm)||al.some(a=>nm.includes(a)))rings.push(...geomRings(ft.geometry||{},cap));}return rings;}
+function allRings(fc,cap){const rings=[];for(const ft of fc.features||[])rings.push(...geomRings(ft.geometry||{},cap));return rings;}
+function ringsToSeg(rings,color,opacity,rad){rad=rad||R*1.012;const v=[];
+  for(const ring of rings){for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];if(Math.abs(a[0]-b[0])>180)continue;
+    const va=lonlat2v(a[0],a[1],rad),vb=lonlat2v(b[0],b[1],rad);v.push(va.x,va.y,va.z,vb.x,vb.y,vb.z);}}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(v,3));
+  return new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity}));}
+
+/* ---- grounding eventi puntuali via Wikidata ---- */
+const WD="https://www.wikidata.org/w/api.php?origin=*&format=json&";
+async function wdSearch(q){
+  for(const lang of["it","en"]){
+    const r=await fetch(WD+`action=wbsearchentities&limit=1&language=${lang}&uselang=${lang}&search=${encodeURIComponent(q)}`);
+    if(!r.ok)continue;const j=await r.json();if(j.search&&j.search.length)return j.search[0].id;}
+  return null;}
+async function wdEntity(qid){
+  const r=await fetch(WD+`action=wbgetentities&props=claims&ids=${qid}`);const j=await r.json();
+  const cl=(j.entities&&j.entities[qid]&&j.entities[qid].claims)||{};let lat=null,lon=null,year=null;
+  if(cl.P625&&cl.P625[0]&&cl.P625[0].mainsnak.datavalue){const v=cl.P625[0].mainsnak.datavalue.value;lat=v.latitude;lon=v.longitude;}
+  if(cl.P585&&cl.P585[0]&&cl.P585[0].mainsnak.datavalue){year=parseInt(String(cl.P585[0].mainsnak.datavalue.value.time).replace("+",""),10);}
+  return{lat,lon,year};}
+const wdCache={};
+async function resolveItem(it,fy){const key=(it.query||it.name||"").trim();if(!key)return null;
+  if(wdCache[key]!==undefined)return wdCache[key];let out=null;
+  try{const qid=await wdSearch(key);if(qid){const e=await wdEntity(qid);if(e.lat!=null)out={name:key,lat:e.lat,lon:e.lon,year:e.year!=null?e.year:(it.year||fy)};}}catch(e){}
+  wdCache[key]=out;return out;}
+
+/* ===========================================================================
+   RENDERER PER ARCHETIPO
+   =========================================================================== */
+let updaters=[],yearAt=()=>"—",curYearFn=()=>0,sceneLabels=[];
+function clearScene(){while(aiLayer.children.length)aiLayer.remove(aiLayer.children[0]);updaters=[];sceneLabels=[];}
+const matGold=new THREE.MeshBasicMaterial({color:0xe3ac46}),matHalo=new THREE.MeshBasicMaterial({color:0xe3ac46,transparent:true,opacity:.3});
+const fmtY=y=>(y<0?Math.abs(y)+" a.C.":y+" d.C."),lerp=(a,b,t)=>Math.round(a+(b-a)*t);
+const CUM=[0,31,59,90,120,151,181,212,243,273,304,334],MONTHS=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+function parseISO(s){const m=/(-?\d{1,4})-(\d{1,2})-(\d{1,2})/.exec(s||"");if(!m)return{y:0,doy:1,fy:0};
+  const y=+m[1],mo=+m[2],d=+m[3],doy=CUM[Math.max(0,Math.min(11,mo-1))]+d;return{y,doy,fy:y+doy/365};}
+function dateLabel(a,b,p){const fy=a.fy+(b.fy-a.fy)*p;let y=Math.floor(fy);let doy=Math.round((fy-y)*365);if(doy<1)doy=1;
+  let mo=0;while(mo<11&&doy>CUM[mo+1])mo++;const day=Math.max(1,doy-CUM[mo]);return day+" "+MONTHS[mo]+" "+(y<0?Math.abs(y)+" a.C.":y);}
+function makeShip(){const g=new THREE.Group();
+  const hull=new THREE.Mesh(new THREE.BoxGeometry(.012,.008,.034),new THREE.MeshBasicMaterial({color:0x8a6334}));hull.position.y=.004;g.add(hull);
+  const sail=new THREE.Mesh(new THREE.PlaneGeometry(.02,.018),new THREE.MeshBasicMaterial({color:0xf2eedd,side:THREE.DoubleSide}));sail.position.y=.016;g.add(sail);return g;}
+function placeShip(sh,pts,t,lat){const n=pts.length,f=THREE.MathUtils.clamp(t,0,1),i=Math.min(n-2,Math.max(0,Math.floor(f*(n-1))));
+  const here=pts[i],next=pts[i+1],up=here.clone().normalize(),fwd=next.clone().sub(here).normalize();
+  const right=new THREE.Vector3().crossVectors(up,fwd).normalize(),f2=new THREE.Vector3().crossVectors(right,up).normalize();
+  sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right,up,f2));
+  sh.position.copy(here.clone().add(right.clone().multiplyScalar(lat)).add(up.clone().multiplyScalar(.006)));}
+let lastDataNote="";
+
+async function renderScene(s){
+  clearScene();const ys=s.yearStart,ye=s.yearEnd;
+  yearAt=p=>fmtY(lerp(ys,ye,p));curYearFn=p=>lerp(ys,ye,p);
+  lastDataNote="Coordinate generate dall'IA — verifica prima dell'uso in classe.";
+
+  if(s.archetype==="pulse"){
+    document.getElementById("lessonBody").innerHTML=`<p class="placeholder"><span class="spin"></span>Verifico gli eventi su Wikidata…</p>`;
+    let okN=0,failN=0;
+    for(const it of (s.items||[])){
+      let ev=await resolveItem(it,ys);
+      if(!ev&&it.lat!=null)ev={name:it.query||it.name||"",lat:it.lat,lon:it.lon,year:it.year||ys};
+      if(!ev){failN++;continue;}okN++;
+      const m=new THREE.Mesh(new THREE.SphereGeometry(.016,12,12),matGold);m.position.copy(ll2v(ev.lat,ev.lon,R*1.014));
+      const h=new THREE.Mesh(new THREE.SphereGeometry(.03,12,12),matHalo);m.add(h);aiLayer.add(m);
+      updaters.push(p=>{h.scale.setScalar(1+Math.sin(p*16+ev.lat)*.3);});
+      const lab=makeLabel(ev.name.length>22?ev.name.slice(0,20)+"…":ev.name);lab.position.copy(ll2v(ev.lat,ev.lon,R*1.05));aiLayer.add(lab);sceneLabels.push(lab);
+    }
+    yearAt=()=>fmtY(ys);curYearFn=()=>ys;
+    lastDataNote=okN?`Eventi verificati su Wikidata: ${okN} trovati${failN?`, ${failN} non risolti`:""} — coordinate e date reali, non inventate.`:"Nessun evento risolto su Wikidata (rete assente o nomi non trovati).";
+  }
+  else if(s.archetype==="journey"){
+    let dItem=null;
+    (s.items||[]).forEach(it=>{
+      const pts=pathWp(it.waypoints,22).map(v=>v.clone().multiplyScalar(R*1.012));
+      aiLayer.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x6fd3e0,transparent:true,opacity:.5})));
+      const fleet=new THREE.Group();aiLayer.add(fleet);
+      const ships=[makeShip(),makeShip(),makeShip()],offs=[-0.02,0,0.02],lag=[0.015,0,-0.015];
+      ships.forEach(sh=>fleet.add(sh));
+      updaters.push(p=>{ships.forEach((sh,i)=>placeShip(sh,pts,p+lag[i],offs[i]));});
+      if(!dItem&&it.fromDate)dItem=it;
+    });
+    if(dItem){const a=parseISO(dItem.fromDate),b=parseISO(dItem.toDate||dItem.fromDate);
+      yearAt=p=>dateLabel(a,b,p);curYearFn=p=>Math.round(a.fy+(b.fy-a.fy)*p);}
+    else{yearAt=p=>fmtY(lerp(ys,ye,p));curYearFn=p=>lerp(ys,ye,p);}
+  }
+  else if(s.archetype==="spread"){
+    (s.items||[]).forEach(it=>{const o=new THREE.Mesh(new THREE.SphereGeometry(.022,12,12),matGold);o.position.copy(ll2v(it.originLat,it.originLon,R*1.014));aiLayer.add(o);
+      (it.targets||[]).forEach((t,ti)=>{const pts=arc([it.originLat,it.originLon],t,.18,40);const geo=new THREE.BufferGeometry().setFromPoints(pts);
+        const line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe3ac46,transparent:true,opacity:.55}));geo.setDrawRange(0,0);aiLayer.add(line);
+        const tip=new THREE.Mesh(new THREE.SphereGeometry(.014,10,10),matGold);tip.visible=false;aiLayer.add(tip);const start=ti/(it.targets.length+1);
+        updaters.push(p=>{const loc=THREE.MathUtils.clamp((p-start)/.5,0,1);const n=Math.floor(loc*pts.length);geo.setDrawRange(0,n);if(n>1){tip.visible=true;tip.position.copy(pts[Math.min(n,pts.length-1)]);}else tip.visible=false;});});});
+  }
+  else if(s.archetype==="network"){
+    (s.items||[]).forEach(it=>{const pts=arc(it.from,it.to,.22,40);aiLayer.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x6fd3e0,transparent:true,opacity:.5})));
+      [it.from,it.to].forEach(e=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.014,10,10),matGold);m.position.copy(ll2v(e[0],e[1],R*1.014));aiLayer.add(m);});});
+    yearAt=()=>s.period||fmtY(ys);curYearFn=()=>ys;
+  }
+  else if(s.archetype==="territory"){
+    document.getElementById("lessonBody").innerHTML=`<p class="placeholder"><span class="spin"></span>Carico i confini storici reali…</p>`;
+    const aliases=(s.aliases&&s.aliases.length)?s.aliases:[s.subject||s.title||""];
+    const span=filesInSpan(ys,ye,8);const built=[];
+    for(const a of span){try{const fc=await cacheGeo(a.f);const rings=subjectRings(fc,aliases,160);
+      if(rings.length){const seg=ringsToSeg(rings,0xe3ac46,.95);seg.visible=false;aiLayer.add(seg);built.push({year:a.y,seg});}}catch(e){}}
+    built.sort((x,y)=>x.year-y.year);
+    if(built.length){
+      updaters.push(p=>{const fp=p*built.length,idx=Math.min(built.length-1,Math.floor(fp)),frac=fp-idx;
+        built.forEach((b,i)=>{b.seg.visible=i<=idx;
+          if(i<idx){b.seg.material.opacity=.28;b.seg.material.color.setHex(0x8a6a30);}
+          else if(i===idx){b.seg.material.opacity=.45+.5*Math.min(1,frac*2);b.seg.material.color.setHex(0xe3ac46);}});});
+      yearAt=p=>fmtY(built[Math.min(built.length-1,Math.floor(p*built.length))].year);
+      curYearFn=p=>built[Math.min(built.length-1,Math.floor(p*built.length))].year;
+      lastDataNote="Confini reali da historical-basemaps (DARE/Göteborg) — approssimati e a scala continentale, non inventati dall'IA.";
+    }else{
+      lastDataNote="Confini reali non trovati nel dataset per questo soggetto: l'IA ha riconosciuto il tema ma il dataset non ha quei confini. Resta la scheda didattica.";
+    }
+  }
+  progress=0;document.getElementById("scrub").value=0;playing=true;document.getElementById("play").textContent="❚❚";
+  document.getElementById("timeline").classList.add("on");
+}
+
+/* ---- scheda didattica ---- */
+const esc=s=>String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function renderLesson(s){const t=s.teaching||{};
+  const tl=(t.timeline||[]).map((e,i)=>`<div class="card" data-i="${i}"><div class="card-h"><b>${fmtY(e.year)}</b><span class="ev">${esc(e.event)}</span><span class="card-x">›</span></div></div>`).join("");
+  const kp=(t.keyPoints||[]).map(k=>`<p class="kp">${esc(k)}</p>`).join("");
+  const qs=(t.questions||[]).map(q=>`<p class="q">${esc(q)}</p>`).join("");
+  document.getElementById("lessonBody").innerHTML=
+    `<h2 class="lTitle">${esc(s.title||"")}</h2><p class="lPeriod">${esc(s.period||"")}</p><p class="lSum">${esc(s.summary||"")}</p>
+     ${tl?`<div class="lH">Cronologia · tocca per la lezione</div>${tl}`:""}${kp?`<div class="lH">Punti chiave</div>${kp}`:""}${qs?`<div class="lH">Domande per la classe</div>${qs}`:""}
+     <div class="warn">⚠︎ ${esc(lastDataNote)}</div>`;
+  document.querySelectorAll("#lessonBody .card").forEach(card=>card.querySelector(".card-h").addEventListener("click",()=>openLesson(+card.dataset.i)));
+}
+
+/* ---- MODALE: lezione vera, sopra la scena ---- */
+function openModal(){document.body.classList.add("modal-open");document.getElementById("overlay").classList.add("on");}
+function closeModal(){document.body.classList.remove("modal-open");document.getElementById("overlay").classList.remove("on");}
+document.getElementById("mClose").addEventListener("click",closeModal);
+document.getElementById("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")closeModal();});
+addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
+function renderFullLesson(L,fb){
+  const sec=(h,html)=>html?`<h3>${h}</h3>${html}`:"";
+  document.getElementById("mBody").innerHTML=
+    sec("Contesto",L.context?`<p>${esc(L.context)}</p>`:"")+
+    sec("Che cosa accadde",L.what?`<p>${esc(L.what)}</p>`:"")+
+    sec("Cause",(L.causes||[]).length?`<ul>${L.causes.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>`:"")+
+    sec("Conseguenze",(L.consequences||[]).length?`<ul>${L.consequences.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>`:"")+
+    (L.quote?`<h3>Una voce dell'epoca</h3><p class="quote">${esc(L.quote)}</p>`:"")+
+    sec("Da chiedere alla classe",(L.classroom||[]).length?`<ul>${L.classroom.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>`:"")+
+    `<div class="m-warn">⚠︎ ${fb?"Lezione di esempio curata a mano.":"Lezione redatta dall'IA con ricerca web — verifica i dettagli prima dell'aula."}</div>`;
+}
+async function openLesson(i){
+  const ev=(currentSpec&&currentSpec.teaching&&currentSpec.teaching.timeline||[])[i];if(!ev)return;
+  document.getElementById("mEyebrow").textContent=fmtY(ev.year);
+  document.getElementById("mTitle").textContent=ev.event;
+  openModal();
+  if(ev.lesson){renderFullLesson(ev.lesson,false);return;}
+  if(ev.detail){renderFullLesson({context:ev.detail},true);return;}
+  document.getElementById("mBody").innerHTML=`<div class="m-load"><span class="spin"></span> Sto preparando la lezione…</div>`;
+  try{const L=await aiLesson(currentSpec.title,ev.event,ev.year);ev.lesson=L;renderFullLesson(L,false);}
+  catch(e){document.getElementById("mBody").innerHTML=`<div class="m-warn">Lezione non disponibile (rete assente). ${esc(ev.detail||"")}</div>`;}
+}
+async function aiLesson(title,event,year){
+  const sys=`Sei uno storico che prepara lezioni accurate per la scuola. Rispondi SOLO con JSON valido, in italiano, niente markdown. Schema:
+{"context":str,"what":str,"causes":[str],"consequences":[str],"quote":str,"classroom":[str]}
+context: 2-3 frasi che inquadrano il periodo. what: 3-4 frasi su cosa accadde davvero. causes/consequences: 2-3 voci ciascuna. quote: una citazione o un dato significativo e verificabile (anche parafrasato). classroom: 2 spunti di riflessione per gli studenti. Conciso ma sostanzioso.`;
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:sys,
+      messages:[{role:"user",content:`Lezione su "${event}" (${fmtY(year)}), nel contesto di "${title}". Genera la scheda JSON.`}],
+      tools:[{type:"web_search_20250305",name:"web_search"}]})});
+  if(!res.ok)throw 0;const data=await res.json();
+  const txt=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+/* ===========================================================================
+   GENERAZIONE IA + fallback
+   =========================================================================== */
+const SYS=`Sei un generatore di scene per un atlante storico 3D didattico. Rispondi SOLO con JSON valido, niente markdown. Schema:
+{"title":str,"period":str,"yearStart":int(neg=a.C.),"yearEnd":int,"archetype":"pulse"|"journey"|"spread"|"network"|"territory","summary":str,"items":[...],"teaching":{"timeline":[{"year":int,"event":str}],"keyPoints":[str],"questions":[str]}}
+items per archetype:
+- pulse: [{"query":str,"year":int}]  // NON dare coordinate. "query" = nome esatto e cercabile su Wikidata (es. "Battaglia di Canne", "Eruzione del Vesuvio del 79"); coordinate e data reali vengono prese da Wikidata. "year" solo come ripiego.
+- journey: [{"name":str,"waypoints":[[lat,lon],...],"fromYear":int,"toYear":int,"fromDate":"YYYY-MM-DD","toDate":"YYYY-MM-DD"}] (fromDate/toDate opzionali: mettile se il viaggio è databile, anche dentro un singolo anno, così lo scrubber scorre le date reali)
+- spread: [{"name":str,"originLat":num,"originLon":num,"targets":[[lat,lon],...],"fromYear":int,"toYear":int}]
+- network: [{"from":[lat,lon],"to":[lat,lon],"label":str}]
+- territory: NIENTE items e NIENTE poligoni. Dai invece "subject":str e "aliases":[str] = i nomi con cui l'entita compare nelle varie epoche storiche (es. Roma: ["Rome","Roman Republic","Roman Empire"], in inglese perche il dataset e in inglese). I confini reali vengono caricati da un dataset esterno.
+Regole: scegli l'archetipo piu adatto (espansioni/imperi/stati=territory). Per territory yearStart/yearEnd = arco dell'espansione. Italiano per i testi, inglese per gli aliases. Max 6 items, timeline max 6, keyPoints max 4, questions max 3. Conciso.`;
+async function generate(qText){
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:SYS,messages:[{role:"user",content:`Richiesta dell'insegnante: "${qText}". Genera la scene spec.`}]})});
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const data=await res.json();const txt=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+const FALLBACK={
+  roma:{title:"Espansione di Roma",period:"500 a.C. – 200 d.C.",yearStart:-500,yearEnd:200,archetype:"territory",
+    subject:"Rome",aliases:["Rome","Roman Republic","Roman Empire"],
+    summary:"Da città-stato del Lazio a impero mediterraneo, fino alla massima estensione del II secolo.",
+    teaching:{timeline:[
+      {year:-509,event:"Nascita della Repubblica",detail:"Secondo la tradizione i Romani cacciano l'ultimo re etrusco, Tarquinio il Superbo, e fondano la Repubblica. Il potere passa a magistrati eletti annualmente, i consoli, affiancati dal Senato: è la cornice istituzionale che accompagnerà gran parte dell'espansione."},
+      {year:-264,event:"Guerre puniche",detail:"Inizia lo scontro con Cartagine per il Mediterraneo occidentale. Tre guerre, dal 264 al 146 a.C., spingono Roma a dotarsi di una flotta e a conquistare Sicilia, Spagna e infine Cartagine: è il salto da potenza italica a potenza mediterranea."},
+      {year:-27,event:"Augusto, primo imperatore",detail:"Dopo le guerre civili seguite alla morte di Cesare, Ottaviano diventa Augusto e concentra i poteri pur mantenendo le forme repubblicane. Comincia il Principato e la pax romana, una lunga stabilità che favorisce commerci ed espansione."},
+      {year:117,event:"Massima estensione (Traiano)",detail:"Sotto Traiano l'impero tocca la massima estensione, dalla Britannia alla Mesopotamia, dopo le conquiste di Dacia e Oriente. Da qui la spinta si arresta: prevale la difesa dei confini e i successori abbandonano i territori più esposti."}],
+      keyPoints:["Espansione graduale lungo 7 secoli","Le guerre puniche aprirono il Mediterraneo","Repubblica → Impero cambiò la scala del dominio"],
+      questions:["Perché Roma riuscì a integrare i popoli conquistati?","Cosa rese instabile un impero così vasto?"]}},
+  colombo:{title:"Il primo viaggio di Colombo",period:"agosto – ottobre 1492",yearStart:1492,yearEnd:1492,archetype:"journey",
+    items:[{name:"Flotta di Colombo",waypoints:[[37.23,-6.9],[28.1,-17.1],[24,-74.5]],fromYear:1492,toYear:1492,fromDate:"1492-08-03",toDate:"1492-10-12"}],
+    summary:"Dalla Spagna alle Canarie e oltre l'Atlantico, fino all'approdo a Guanahani.",
+    teaching:{timeline:[
+      {year:1492,event:"3 ago: partenza da Palos",detail:"Le tre caravelle salpano dal porto di Palos in Andalusia, finanziate dalla corona di Castiglia subito dopo la fine della Reconquista. L'obiettivo dichiarato è raggiungere le Indie navigando verso ovest."},
+      {year:1492,event:"6 set: dalle Canarie",detail:"Dopo una sosta di riparazione alle Canarie, la flotta riparte verso l'oceano aperto sfruttando gli alisei, i venti costanti da est che spingono le navi verso ovest."},
+      {year:1492,event:"12 ott: approdo",detail:"Dopo oltre un mese in mare aperto e crescente tensione tra gli equipaggi, arriva l'avvistamento di terra: un'isola delle Bahamas, che Colombo battezza San Salvador, convinto di essere giunto in Asia."}],
+      keyPoints:["Rotta verso ovest per le Indie","Lo scalo alle Canarie sfruttava gli alisei","L'approdo era nei Caraibi, non in Asia"],questions:["Perché Colombo sottostimò la circonferenza terrestre?"]}},
+  peste:{title:"La peste nera",period:"1347 – 1351",yearStart:1347,yearEnd:1351,archetype:"spread",
+    items:[{name:"Peste",originLat:45,originLon:35.4,targets:[[38.2,15.5],[44.4,8.9],[43.3,5.4],[48.85,2.35],[51.5,-0.1],[53.55,10]],fromYear:1347,toYear:1351}],
+    summary:"Dal Mar Nero la peste risale le rotte commerciali e dilaga in Europa in pochi anni.",
+    teaching:{timeline:[
+      {year:1347,event:"Da Caffa a Messina",detail:"La peste arriva in Europa con le navi genovesi in fuga dall'assedio di Caffa, in Crimea. Sbarca a Messina nell'ottobre 1347 e si diffonde rapidamente lungo le rotte marittime del Mediterraneo."},
+      {year:1348,event:"Italia e Francia",detail:"Nel 1348 l'epidemia devasta le città italiane e francesi, da Firenze a Parigi. La densità urbana e i commerci ne accelerano la diffusione; intere comunità vengono spazzate via."},
+      {year:1349,event:"Inghilterra e Germania",detail:"La peste risale verso nord raggiungendo Inghilterra e Germania lungo le vie commerciali. Di fronte a una mortalità incomprensibile per l'epoca si moltiplicano persecuzioni e capri espiatori."},
+      {year:1351,event:"Nord Europa",detail:"Entro il 1351 l'ondata raggiunge la Scandinavia. Si stima sia morto circa un terzo della popolazione europea, con conseguenze profonde su economia, lavoro e struttura sociale."}],
+      keyPoints:["Si diffuse lungo le rotte marittime","Uccise forse un terzo dell'Europa","Seguì i commerci, non i confini"],questions:["Perché i porti furono colpiti per primi?"]}},
+};
+function pickFallback(q){q=q.toLowerCase();if(/rom|impero romano|cesare|traiano/.test(q))return FALLBACK.roma;
+  if(/colombo|caravell|america|1492/.test(q))return FALLBACK.colombo;if(/peste|nera|pandemi|black death/.test(q))return FALLBACK.peste;return null;}
+
+let busy=false;
+async function onGenerate(){const q=document.getElementById("q").value.trim();if(!q||busy)return;
+  busy=true;document.getElementById("gen").disabled=true;
+  document.getElementById("lessonBody").innerHTML=`<p class="placeholder"><span class="spin"></span>L'IA sta costruendo la scena…</p>`;
+  try{const spec=await generate(q);currentSpec=spec;await renderScene(spec);renderLesson(spec);}
+  catch(e){const fb=pickFallback(q);
+    if(fb){currentSpec=fb;await renderScene(fb);renderLesson(fb);}
+    else document.getElementById("lessonBody").innerHTML=`<p class="placeholder">Non ho raggiunto l'IA e non ho un esempio offline per questa richiesta. Prova: <b>impero romano</b>, <b>Colombo</b>, <b>peste nera</b>.</p>`;}
+  busy=false;document.getElementById("gen").disabled=false;}
+document.getElementById("gen").addEventListener("click",onGenerate);
+document.getElementById("q").addEventListener("keydown",e=>{if(e.key==="Enter")onGenerate();});
+[["L'espansione dell'impero romano"],["I viaggi di Colombo"],["La peste nera"]].forEach(([label])=>{const b=document.createElement("button");b.textContent=label;
+  b.addEventListener("click",()=>{document.getElementById("q").value=label;onGenerate();});document.getElementById("chips").appendChild(b);});
+
+/* ===========================================================================
+   SWITCH "CONFINI REALI DELL'EPOCA"
+   =========================================================================== */
+function makeLabel(text){
+  const fs=44,pad=18,meas=document.createElement("canvas").getContext("2d");
+  meas.font=`600 ${fs}px Inter,sans-serif`;const w=Math.ceil(meas.measureText(text).width);
+  const c=document.createElement("canvas");c.width=w+pad*2;c.height=fs+pad*2;const x=c.getContext("2d");
+  x.font=`600 ${fs}px Inter,sans-serif`;x.textBaseline="middle";x.textAlign="center";
+  x.shadowColor="rgba(0,0,0,.9)";x.shadowBlur=10;x.fillStyle="rgba(240,235,222,.97)";
+  x.fillText(text,c.width/2,c.height/2);
+  const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
+  sp.scale.set(c.width*0.0009,c.height*0.0009,1);return sp;}
+function featCentroid(g){const polys=g.type==="MultiPolygon"?g.coordinates:g.type==="Polygon"?[g.coordinates]:[];
+  let best=null,bl=0;for(const poly of polys){const r=poly[0];if(r&&r.length>bl){bl=r.length;best=r;}}
+  if(!best)return null;let sx=0,sy=0;for(const c of best){sx+=c[0];sy+=c[1];}return {lon:sx/best.length,lat:sy/best.length,size:bl};}
+
+let bordersOn=false,bordersFile=null,bordersObj=null,bordersBusy=false;const bordersCache={};const _tmp=new THREE.Vector3();
+async function ensureBorders(file){if(bordersCache[file])return bordersCache[file];
+  const fc=await cacheGeo(file);const grp=new THREE.Group();
+  grp.add(ringsToSeg(allRings(fc,90),0x9bb4d6,.5));
+  const labels=new THREE.Group();grp.add(labels);grp.userData.labels=labels;
+  const cand=[];for(const ft of fc.features||[]){const nm=(ft.properties&&ft.properties.NAME)||"";if(!nm)continue;
+    const cen=featCentroid(ft.geometry||{});if(cen&&cen.size>=12)cand.push({nm,cen});}
+  cand.sort((a,b)=>b.cen.size-a.cen.size);
+  cand.slice(0,60).forEach(o=>{const disp=o.nm.length>20?o.nm.slice(0,18)+"…":o.nm;
+    const sp=makeLabel(disp);sp.position.copy(lonlat2v(o.cen.lon,o.cen.lat,R*1.03));labels.add(sp);});
+  bordersCache[file]=grp;return grp;}
+async function updateBorders(year){const a=nearestFile(year);
+  if(a.f!==bordersFile&&!bordersBusy){bordersBusy=true;try{const grp=await ensureBorders(a.f);
+    if(bordersObj&&bordersObj!==grp)globe.remove(bordersObj);bordersObj=grp;globe.add(bordersObj);bordersFile=a.f;
+    document.getElementById("bEra").textContent="mappa del mondo: "+fmtY(a.y);}catch(e){}bordersBusy=false;}
+  if(bordersObj)bordersObj.visible=bordersOn;syncPlague();}
+const bToggle=document.getElementById("bToggle");
+bToggle.addEventListener("click",()=>{bordersOn=!bordersOn;bToggle.setAttribute("aria-pressed",bordersOn?"true":"false");modeTarget=bordersOn?1:0;
+  if(bordersOn)updateBorders(curYearNum);else{if(bordersObj)bordersObj.visible=false;document.getElementById("bEra").textContent="";teardownPlague();}});
+
+
+/* ===========================================================================
+   FEATURE PESTE NERA — confini cliccabili (Nord/Centro Europa, 1347–1351)
+   Quando i confini reali sono attivi sulla mappa del 1300, i territori
+   nordeuropei diventano cliccabili e aprono una card "rullino" (stile post IG)
+   con illustrazioni d'autore e schede storiche sulla peste nera.
+   =========================================================================== */
+const P_SPACE="#05080f",P_DEEP="#0c1730",P_GOLD="#e3ac46",P_GOLD2="#f3d28f",
+      P_CYAN="#6fd3e0",P_PAPER="#eef1f6",P_DIM="#9aa6bd",P_RUST="#b5552f";
+
+/* ---- cornice incisione condivisa (id univoci per slide) ---- */
+function svgWrap(inner,top,bot,u){return `<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="sky${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bot}"/></linearGradient>
+<radialGradient id="vig${u}" cx="50%" cy="40%" r="78%"><stop offset="52%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity="0.6"/></radialGradient>
+<filter id="grain${u}"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer></filter>
+</defs>
+<rect width="400" height="500" fill="url(#sky${u})"/>
+${inner}
+<rect width="400" height="500" fill="url(#vig${u})"/>
+<rect width="400" height="500" filter="url(#grain${u})"/>
+<rect x="11" y="11" width="378" height="478" fill="none" stroke="${P_GOLD}" stroke-opacity="0.32" stroke-width="1"/>
+<g stroke="${P_GOLD}" stroke-opacity="0.55" stroke-width="1.4" fill="none">
+<path d="M11 28 L11 11 L28 11"/><path d="M372 11 L389 11 L389 28"/>
+<path d="M11 472 L11 489 L28 489"/><path d="M389 472 L389 489 L372 489"/></g>
+</svg>`;}
+
+/* ---- generatori di "tavole" illustrate ---- */
+function plate(scene,u){
+  let inner="",top=P_DEEP,bot=P_SPACE;
+  if(scene==="ship"||scene==="harbor"){top="#24344f";bot=P_DEEP;
+    inner=`<circle cx="305" cy="86" r="30" fill="${P_GOLD2}" opacity="0.12"/><circle cx="305" cy="86" r="17" fill="${P_GOLD2}" opacity="0.3"/>
+<g stroke="${P_GOLD}" stroke-width="2" fill="none" opacity="0.7" stroke-linecap="round"><path d="M58 96 q9 -8 18 0"/><path d="M76 96 q9 -8 18 0"/><path d="M122 70 q7 -6 14 0"/><path d="M136 70 q7 -6 14 0"/></g>
+<rect x="0" y="340" width="400" height="160" fill="#06101c"/>
+<g stroke="${P_CYAN}" stroke-width="1.5" fill="none" opacity="0.32"><path d="M0 362 q25 -9 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"/><path d="M0 398 q25 9 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0" opacity="0.7"/><path d="M0 438 q25 -9 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0" opacity="0.5"/></g>
+<g stroke="${P_GOLD}" stroke-width="2" stroke-linejoin="round" fill="#0a1422"><path d="M118 358 q82 46 164 0 l-26 -26 -112 0 z"/><path d="M150 332 l100 0"/><line x1="200" y1="332" x2="200" y2="232"/><path d="M200 244 q46 26 0 76 q-46 -26 0 -76 z" fill="${P_RUST}" fill-opacity="0.5"/><path d="M200 232 l26 9 -26 9 z" fill="${P_GOLD}" stroke="none"/><g stroke-width="1.5" opacity="0.8"><line x1="140" y1="354" x2="120" y2="376"/><line x1="170" y1="358" x2="152" y2="380"/><line x1="230" y1="358" x2="248" y2="380"/><line x1="260" y1="354" x2="280" y2="376"/></g></g>`;}
+  else if(scene==="city"){top="#3a1c14";bot=P_DEEP;
+    inner=`<circle cx="300" cy="108" r="34" fill="${P_RUST}" opacity="0.22"/><circle cx="300" cy="108" r="19" fill="${P_GOLD}" opacity="0.32"/>
+<g stroke="#0a0d14" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.85"><path d="M88 122 q10 -9 20 0"/><path d="M108 122 q10 -9 20 0"/><path d="M150 150 q8 -7 16 0"/><path d="M166 150 q8 -7 16 0"/><path d="M250 92 q8 -7 16 0"/><path d="M266 92 q8 -7 16 0"/></g>
+<rect x="0" y="392" width="400" height="108" fill="#070c16"/>
+<path fill="#0a1322" stroke="${P_GOLD}" stroke-width="1.6" stroke-linejoin="round" d="M60 392 L60 322 L72 322 L72 314 L84 314 L84 322 L96 322 L96 314 L108 314 L108 322 L150 322 L150 270 L160 270 L160 260 L172 260 L172 270 L182 270 L182 322 L210 322 L218 272 L228 248 L238 272 L246 322 L300 322 L300 314 L312 314 L312 322 L324 322 L324 314 L336 314 L336 322 L340 322 L340 392 Z"/>
+<path d="M228 248 L228 392" stroke="${P_GOLD}" stroke-width="1.4" opacity="0.5"/>
+<path d="M188 392 q0 -30 16 -30 q16 0 16 30" fill="#05080f" stroke="${P_GOLD}" stroke-width="1.4"/>
+<g fill="${P_GOLD}" opacity="0.45"><rect x="120" y="350" width="9" height="14"/><rect x="158" y="300" width="8" height="12"/><rect x="300" y="350" width="9" height="14"/><rect x="222" y="300" width="8" height="14"/></g>`;}
+  else if(scene==="macabre"){top=P_DEEP;bot=P_SPACE;
+    const sk=(cx)=>`<g stroke="${P_PAPER}" stroke-opacity="0.85" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="${cx}" cy="300" r="14" fill="#0a0f1a"/><circle cx="${cx-5}" cy="298" r="2.4" fill="${P_PAPER}" stroke="none"/><circle cx="${cx+5}" cy="298" r="2.4" fill="${P_PAPER}" stroke="none"/><path d="M${cx-5} 310 l10 0"/><line x1="${cx}" y1="314" x2="${cx}" y2="360"/><path d="M${cx-11} 324 q11 6 22 0"/><path d="M${cx-11} 334 q11 6 22 0"/><path d="M${cx-9} 344 q9 5 18 0"/><path d="M${cx-10} 362 l20 0"/><line x1="${cx}" y1="362" x2="${cx-12}" y2="410"/><line x1="${cx}" y1="362" x2="${cx+12}" y2="410"/></g>`;
+    const robe=(cx)=>`<g stroke="${P_GOLD2}" stroke-width="2" fill="#0a0f1a" stroke-linejoin="round"><circle cx="${cx}" cy="300" r="13"/><path d="M${cx-24} 412 L${cx} 320 L${cx+24} 412 Z"/></g>`;
+    inner=`<circle cx="312" cy="80" r="26" fill="${P_PAPER}" opacity="0.08"/><circle cx="312" cy="80" r="15" fill="${P_PAPER}" opacity="0.16"/>
+<line x1="0" y1="430" x2="400" y2="430" stroke="${P_GOLD}" stroke-opacity="0.3" stroke-width="1.4"/>
+${sk(112)}${robe(200)}${sk(290)}
+<g stroke="${P_PAPER}" stroke-opacity="0.7" stroke-width="2" fill="none" stroke-linecap="round"><path d="M124 320 q30 -10 56 6"/><path d="M220 322 q30 -8 58 -4"/></g>`;}
+  else if(scene==="route"){top=P_DEEP;bot=P_SPACE;
+    inner=`<g stroke="${P_GOLD}" stroke-opacity="0.22" stroke-width="1.3" fill="none"><path d="M40 150 q60 -30 120 -10 q70 24 130 4 q40 -14 70 6"/><path d="M30 250 q80 30 150 10 q90 -26 180 8"/><path d="M60 350 q90 -24 160 6 q70 28 140 0"/></g>
+<g stroke="${P_DIM}" stroke-opacity="0.25" stroke-width="1" fill="none"><line x1="0" y1="200" x2="400" y2="200"/><line x1="0" y1="300" x2="400" y2="300"/><line x1="120" y1="0" x2="120" y2="500"/><line x1="260" y1="0" x2="260" y2="500"/></g>
+<g transform="translate(330,70)" stroke="${P_GOLD2}" stroke-width="1.4" fill="none" opacity="0.7"><circle r="16"/><path d="M0 -20 L0 20 M-20 0 L20 0"/><path d="M0 -20 l5 8 -10 0 z" fill="${P_GOLD2}" stroke="none"/></g>
+<path d="M300 410 Q200 250 110 150" stroke="${P_GOLD}" stroke-width="2.4" fill="none" stroke-dasharray="2 7" stroke-linecap="round"/>
+<circle cx="300" cy="410" r="7" fill="${P_GOLD}"/><circle cx="300" cy="410" r="14" fill="none" stroke="${P_GOLD}" stroke-opacity="0.4"/>
+<g><circle cx="110" cy="150" r="9" fill="none" stroke="${P_CYAN}" stroke-opacity="0.8" stroke-width="2"/><circle cx="110" cy="150" r="18" fill="none" stroke="${P_CYAN}" stroke-opacity="0.45" stroke-width="1.6"/><circle cx="110" cy="150" r="28" fill="none" stroke="${P_CYAN}" stroke-opacity="0.22" stroke-width="1.4"/><circle cx="110" cy="150" r="4" fill="${P_CYAN}"/></g>`;}
+  else if(scene==="flagellants"){top=P_DEEP;bot=P_SPACE;
+    const fig=(cx,bow)=>`<g stroke="${P_PAPER}" stroke-opacity="0.82" stroke-width="2" fill="#0a0f1a" stroke-linejoin="round"><circle cx="${cx}" cy="${330-bow}" r="11"/><path d="M${cx-18} 430 L${cx-6} ${344-bow} Q${cx} ${336-bow} ${cx+6} ${344-bow} L${cx+18} 430 Z"/></g>`;
+    inner=`<line x1="0" y1="430" x2="400" y2="430" stroke="${P_GOLD}" stroke-opacity="0.3" stroke-width="1.4"/>
+<g stroke="${P_GOLD}" stroke-width="3" stroke-linecap="round"><line x1="96" y1="430" x2="96" y2="250"/><line x1="74" y1="286" x2="118" y2="286"/></g>
+${fig(130,6)}${fig(186,12)}${fig(244,6)}${fig(300,12)}
+<g stroke="${P_GOLD2}" stroke-opacity="0.6" stroke-width="1.4" fill="none" stroke-linecap="round"><path d="M150 300 l24 -14"/><path d="M206 306 l24 -14"/><path d="M264 300 l24 -14"/></g>`;}
+  else if(scene==="memorial"){top="#0b1424";bot="#02040a";
+    inner=`<g><ellipse cx="200" cy="300" rx="70" ry="70" fill="${P_GOLD}" opacity="0.06"/><ellipse cx="200" cy="300" rx="42" ry="42" fill="${P_GOLD}" opacity="0.1"/></g>
+<rect x="186" y="300" width="28" height="120" rx="3" fill="${P_PAPER}" opacity="0.5"/>
+<rect x="178" y="416" width="44" height="12" rx="3" fill="#0a1322" stroke="${P_GOLD}" stroke-width="1.4"/>
+<path d="M200 300 C188 282 188 268 200 252 C212 268 212 282 200 300 Z" fill="${P_GOLD}"/>
+<path d="M200 290 C194 280 194 272 200 262 C206 272 206 280 200 290 Z" fill="${P_GOLD2}"/>
+<path d="M200 252 q-10 -22 4 -40 q-12 18 -2 34" stroke="${P_DIM}" stroke-opacity="0.5" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+<g stroke="${P_GOLD}" stroke-opacity="0.3" stroke-width="1.2"><line x1="120" y1="452" x2="280" y2="452"/><line x1="140" y1="462" x2="260" y2="462"/></g>`;}
+  else if(scene==="spared"){top="#14304a";bot=P_DEEP;
+    inner=`<circle cx="300" cy="120" r="38" fill="${P_CYAN}" opacity="0.12"/><circle cx="300" cy="120" r="21" fill="${P_GOLD2}" opacity="0.28"/>
+<path d="M70 300 Q200 250 330 300" fill="none" stroke="${P_GOLD}" stroke-opacity="0.35" stroke-width="1.6" stroke-dasharray="1 6"/>
+<g fill="#0a1322" stroke="${P_GOLD}" stroke-width="1.5" stroke-linejoin="round"><path d="M150 360 L150 320 L162 306 L174 320 L174 360 Z"/><path d="M186 360 L186 332 L210 332 L210 360 Z"/><path d="M222 360 L222 326 L234 314 L246 326 L246 360 Z"/></g>
+<rect x="0" y="360" width="400" height="140" fill="#081120"/>
+<g stroke="${P_CYAN}" stroke-opacity="0.3" stroke-width="1.4" fill="none"><path d="M0 392 q100 -16 200 0 t200 0"/><path d="M0 422 q100 16 200 0 t200 0"/><path d="M0 454 q100 -16 200 0 t200 0"/></g>
+<g stroke="${P_GOLD}" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"><path d="M300 110 q8 -7 16 0"/><path d="M316 110 q8 -7 16 0"/></g>`;}
+  else if(scene==="crown"){top=P_DEEP;bot=P_SPACE;
+    inner=`<ellipse cx="200" cy="300" rx="120" ry="110" fill="${P_GOLD}" opacity="0.05"/>
+<g stroke="${P_GOLD2}" stroke-width="2" fill="#0a1322" stroke-linejoin="round"><path d="M120 330 L132 252 L162 300 L200 240 L238 300 L268 252 L280 330 Z"/><rect x="120" y="330" width="160" height="34" rx="4"/></g>
+<g fill="${P_GOLD}"><circle cx="132" cy="250" r="6"/><circle cx="200" cy="238" r="7"/><circle cx="268" cy="250" r="6"/></g>
+<g fill="${P_RUST}" fill-opacity="0.7" stroke="${P_GOLD}" stroke-width="1"><circle cx="150" cy="347" r="6"/><circle cx="200" cy="347" r="7"/><circle cx="250" cy="347" r="6"/></g>
+<path d="M200 238 l0 -22 M190 222 l20 0" stroke="${P_GOLD2}" stroke-width="2.4" stroke-linecap="round"/>
+<g stroke="${P_GOLD}" stroke-opacity="0.5" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M104 360 q-18 -30 -10 -64 q14 22 16 50"/><path d="M296 360 q18 -30 10 -64 q-14 22 -16 50"/></g>`;}
+  else if(scene==="north"){top="#10243a";bot=P_DEEP;
+    inner=`<path d="M0 150 q100 -40 200 -10 q100 30 200 -6" fill="none" stroke="${P_CYAN}" stroke-opacity="0.25" stroke-width="6"/>
+<path d="M0 170 q100 -34 200 -6 q100 28 200 -10" fill="none" stroke="${P_GOLD2}" stroke-opacity="0.14" stroke-width="4"/>
+<g fill="#0a1626" stroke="${P_GOLD}" stroke-width="1.4" stroke-linejoin="round"><path d="M0 340 L70 230 L140 340 Z"/><path d="M120 350 L220 200 L320 350 Z"/><path d="M260 350 L340 250 L400 350 L400 350 Z"/></g>
+<g stroke="${P_PAPER}" stroke-opacity="0.6" stroke-width="1.4" fill="none"><path d="M180 230 l18 0 -10 14 14 0" /></g>
+<rect x="0" y="350" width="400" height="150" fill="#06101c"/>
+<g stroke="${P_GOLD}" stroke-width="1.8" fill="#0a1422" stroke-linejoin="round"><path d="M150 410 q40 24 80 0 l-12 -16 -56 0 z"/><line x1="190" y1="394" x2="190" y2="358"/><path d="M190 366 q22 12 0 26 z" fill="${P_RUST}" fill-opacity="0.5"/></g>
+<g fill="${P_PAPER}" opacity="0.8"><circle cx="60" cy="120" r="2"/><circle cx="130" cy="90" r="1.6"/><circle cx="250" cy="130" r="2"/><circle cx="330" cy="100" r="1.6"/><circle cx="90" cy="300" r="1.8"/><circle cx="300" cy="290" r="2"/><circle cx="200" cy="420" r="1.6"/><circle cx="120" cy="440" r="1.8"/><circle cx="350" cy="430" r="1.6"/></g>`;}
+  else if(scene==="scroll"){top=P_DEEP;bot=P_SPACE;
+    inner=`<g transform="translate(0,40)"><rect x="92" y="120" width="216" height="260" rx="6" fill="${P_PAPER}" opacity="0.9"/>
+<rect x="80" y="110" width="14" height="280" rx="7" fill="#0a1322" stroke="${P_GOLD}" stroke-width="1.4"/>
+<rect x="306" y="110" width="14" height="280" rx="7" fill="#0a1322" stroke="${P_GOLD}" stroke-width="1.4"/>
+<g stroke="${P_DEEP}" stroke-opacity="0.55" stroke-width="2" stroke-linecap="round"><line x1="116" y1="156" x2="284" y2="156"/><line x1="116" y1="178" x2="284" y2="178"/><line x1="116" y1="200" x2="262" y2="200"/><line x1="116" y1="222" x2="284" y2="222"/><line x1="116" y1="244" x2="248" y2="244"/><line x1="116" y1="266" x2="284" y2="266"/><line x1="116" y1="288" x2="270" y2="288"/></g>
+<circle cx="244" cy="338" r="20" fill="${P_RUST}" fill-opacity="0.85" stroke="${P_GOLD}" stroke-width="1.6"/><path d="M244 328 l0 20 M236 338 l16 0" stroke="${P_GOLD2}" stroke-width="2"/>
+<path d="M244 358 l-8 20 8 -6 8 6 -8 -20" fill="${P_RUST}" fill-opacity="0.8"/></g>`;}
+  else {inner=`<rect width="400" height="500" fill="${P_DEEP}"/>`;}
+  return svgWrap(inner,top,bot,u);
+}
+
+/* ---- icone (avatar, pin, azioni) ---- */
+const IC_SKULL=`<svg viewBox="0 0 24 24" fill="none" stroke="${P_GOLD2}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4.4 0-7 2.9-7 7 0 2.2 1 3.6 2 4.4v2.1c0 .8.7 1.5 1.5 1.5h7c.8 0 1.5-.7 1.5-1.5v-2.1c1-.8 2-2.2 2-4.4 0-4.1-2.6-7-7-7Z"/><circle cx="9" cy="10.5" r="1.6" fill="${P_GOLD2}"/><circle cx="15" cy="10.5" r="1.6" fill="${P_GOLD2}"/><path d="M11 14.5h2"/></svg>`;
+const IC_PIN=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>`;
+const IC_ACTS=`<svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 7.6a5 5 0 0 0-8.8-2.2A5 5 0 0 0 3.2 7.6c0 4 5.2 7.8 8.8 10 3.6-2.2 8.8-6 8.8-10Z"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.2 9.2 0 0 1-4-.9L3 20l1-3.9a8.4 8.4 0 1 1 17-4.6Z"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+const IC_BOOK=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>`;
+
+/* ---- DATASET STORICO: Nord/Centro Europa · peste nera ---- */
+const PESTE=[
+  {name:"English territory",label:"Inghilterra",ll:[52.19,-2.19],slides:[
+    {scene:"route",tag:"L'arrivo · estate 1348",text:"<b>Inghilterra.</b> La peste sbarca dalla Guascogna: i cronisti la collocano a Melcombe Regis, nel Dorset, intorno al giugno 1348. Da lì risale verso l'interno seguendo strade e fiumi."},
+    {scene:"city",tag:"Londra · autunno 1348",text:"In pochi mesi raggiunge Londra. Si scavano fosse comuni a East Smithfield; l'inverno non ferma il contagio, che dilaga per tutto il 1349."},
+    {scene:"macabre",tag:"La «Grande Pestilenza»",text:"Le stime moderne indicano un calo della popolazione tra il 40% e il 60% in molte contee. Interi villaggi restano deserti e scompaiono dalle mappe."},
+    {scene:"scroll",tag:"Dopo la peste · i salari",text:"La carenza di braccia fa salire i salari. La corona reagisce con l'Ordinance del 1349 e lo Statute of Labourers del 1351 per bloccarli, alimentando tensioni che esploderanno nella rivolta del 1381."}]},
+  {name:"Scotland",label:"Scozia",ll:[56.55,-4.14],slides:[
+    {scene:"route",tag:"1350 · dal sud",text:"<b>Scozia.</b> Raggiunta nel 1350, dopo l'Inghilterra. La diffusione segue le Lowlands e i centri abitati meridionali."},
+    {scene:"macabre",tag:"«La morte immonda»",text:"I cronisti la chiamano «the foul death of the English». Secondo il racconto, un'armata radunata per attaccare l'Inghilterra colpita porta a casa il contagio."},
+    {scene:"north",tag:"Le Highlands",text:"Le aree rurali e montuose, meno popolate e isolate, sembrano colpite più tardi e meno duramente rispetto alle città del sud."},
+    {scene:"memorial",tag:"Il lutto",text:"Come ovunque, la mortalità travolge clero e comunità. La perdita di sacerdoti e amministratori disorganizza a lungo la vita religiosa e civile."}]},
+  {name:"France",label:"Francia",ll:[46.71,1.95],slides:[
+    {scene:"harbor",tag:"Marsiglia · gennaio 1348",text:"<b>Francia.</b> Dai porti del Mediterraneo la peste entra a Marsiglia nel gennaio 1348 e comincia a risalire la valle del Rodano."},
+    {scene:"city",tag:"Avignone · sede papale",text:"Ad Avignone, sede dei papi, la mortalità è altissima. Clemente VI consacra il Rodano perché vi si possano gettare i corpi quando i cimiteri straboccano."},
+    {scene:"macabre",tag:"Parigi · 1348–1349",text:"La peste raggiunge Parigi e il nord. Il medico papale Guy de Chauliac descrive con lucidità le due forme del morbo, bubbonica e polmonare."},
+    {scene:"memorial",tag:"Contro i capri espiatori",text:"Clemente VI emette bolle che difendono gli ebrei dalle accuse di aver avvelenato i pozzi, tentando di frenare le persecuzioni che divampano altrove."}]},
+  {name:"Holy Roman Empire",label:"Sacro Romano Impero",ll:[49.59,10.22],slides:[
+    {scene:"route",tag:"1348–1349 · da sud e ovest",text:"<b>Sacro Romano Impero.</b> Il contagio penetra da più direzioni lungo le grandi vie fluviali e commerciali, raggiungendo le città renane e l'Europa centrale."},
+    {scene:"flagellants",tag:"I flagellanti",text:"Si diffonde il movimento dei flagellanti: cortei di penitenti che si frustano in pubblico per placare l'ira divina. Clemente VI lo condanna nel 1349."},
+    {scene:"memorial",tag:"Le persecuzioni · 1349",text:"Le comunità ebraiche vengono accusate di diffondere il morbo. Seguono massacri in molte città — tra cui Strasburgo, Magonza, Colonia ed Erfurt — una delle pagine più cupe dell'epoca."},
+    {scene:"city",tag:"Le città renane",text:"Centri popolosi e nodi di traffico come Norimberga e Colonia sono colpiti duramente: la mortalità urbana accelera per densità e scambi continui."}]},
+  {name:"Norway",label:"Norvegia",ll:[62.48,10.21],slides:[
+    {scene:"north",tag:"1349 · la nave alla deriva",text:"<b>Norvegia.</b> Secondo la tradizione, una nave alla deriva con l'equipaggio morto approda a Bergen nel 1349, portando la peste nel paese."},
+    {scene:"macabre",tag:"Una mortalità enorme",text:"Le stime per la Norvegia sono tra le più alte d'Europa: secondo molti studiosi muore tra metà e due terzi della popolazione."},
+    {scene:"memorial",tag:"Fattorie abbandonate",text:"Tanti poderi restano vuoti: gli ødegård, le «fattorie deserte». Il calo demografico segna il paese per generazioni."},
+    {scene:"ship",tag:"Verso il nord",text:"Da Bergen la peste risale le coste e penetra nei fiordi, raggiungendo le aree settentrionali nei mesi seguenti."}]},
+  {name:"Sweden",label:"Svezia",ll:[59.80,16.74],slides:[
+    {scene:"route",tag:"1350 · da sud",text:"<b>Svezia.</b> La peste arriva intorno al 1350, diffondendosi dalle regioni meridionali verso l'interno."},
+    {scene:"north",tag:"Lungo le coste",text:"Insediamenti e rotte costiere fanno da vie di contagio; le aree interne, più isolate, sono raggiunte più lentamente."},
+    {scene:"memorial",tag:"Brigida di Svezia",text:"In questi anni Brigida, futura santa, interpreta la pestilenza come castigo e invito alla penitenza: la sua voce segna la spiritualità del tempo."},
+    {scene:"macabre",tag:"Il bilancio",text:"Anche in Svezia la mortalità è pesante; la perdita di contadini e clero ridisegna economia e vita religiosa."}]},
+  {name:"Denmark",label:"Danimarca",ll:[55.39,9.90],slides:[
+    {scene:"harbor",tag:"1350 · le rotte del Baltico",text:"<b>Danimarca.</b> Crocevia tra Mare del Nord e Baltico, è raggiunta intorno al 1350 lungo le rotte mercantili."},
+    {scene:"city",tag:"I mercati",text:"Porti e mercati, fitti di scambi, favoriscono la diffusione rapida del contagio tra le comunità costiere."},
+    {scene:"macabre",tag:"La mortalità",text:"Come nel resto della Scandinavia, la perdita di popolazione è grave e lascia terre coltivabili senza braccia."},
+    {scene:"scroll",tag:"Conseguenze",text:"Lo spopolamento ridisegna proprietà e lavoro agricolo, con effetti duraturi sull'economia rurale."}]},
+  {name:"Poland",label:"Polonia",ll:[52.05,18.94],slides:[
+    {scene:"spared",tag:"In gran parte risparmiata",text:"<b>Polonia.</b> Spesso citata come una delle aree meno colpite d'Europa, anche se le stime restano incerte e dibattute."},
+    {scene:"crown",tag:"Casimiro III il Grande",text:"Sul trono c'è Casimiro III. Tra le ipotesi: minore integrazione nelle grandi rotte commerciali, bassa densità di popolazione e misure di isolamento ai confini."},
+    {scene:"route",tag:"Diffusione limitata",text:"Il contagio tocca alcune zone di confine ma non dilaga come altrove; molte regioni interne sembrano relativamente protette."},
+    {scene:"memorial",tag:"Non immune dalle violenze",text:"Pur meno colpita, la Polonia non sfugge del tutto alle accuse e alle violenze contro gli ebrei che attraversano l'Europa centrale in quegli anni."}]},
+  {name:"Hungary",label:"Ungheria",ll:[46.84,18.57],slides:[
+    {scene:"route",tag:"1349–1350",text:"<b>Ungheria.</b> La peste raggiunge il regno tra il 1349 e il 1350, arrivando da ovest e da sud lungo le vie di terra e fluviali."},
+    {scene:"crown",tag:"Luigi I d'Angiò",text:"Sul trono c'è Luigi I il Grande. Le fonti sono frammentarie: alcune aree appaiono colpite meno duramente rispetto all'Europa occidentale."},
+    {scene:"city",tag:"Le città",text:"I centri urbani e le rotte commerciali restano i canali principali del contagio, come ovunque in Europa."},
+    {scene:"macabre",tag:"Un quadro incerto",text:"I dati ungheresi sono incerti; resta la testimonianza di un'epidemia che non risparmia il cuore dell'Europa centrale."}]}
+];
+
+/* ---- layer cliccabile sul globo ---- */
+const ray=new THREE.Raycaster();
+let plagueActive=false,plagueFile=null,plagueLayer=null,plagueRegions=[],plagueMarks=[];
+function teardownPlague(){if(plagueLayer){globe.remove(plagueLayer);plagueLayer=null;}plagueRegions=[];plagueMarks=[];plagueActive=false;plagueFile=null;}
+function syncPlague(){
+  const want=bordersOn&&bordersFile==="world_1300.geojson";
+  if(!want){if(plagueActive)teardownPlague();return;}
+  if(plagueActive&&plagueFile===bordersFile){plagueLayer.visible=true;return;}
+  teardownPlague();
+  const fc=geoCache["world_1300.geojson"];if(!fc)return;
+  plagueLayer=new THREE.Group();globe.add(plagueLayer);
+  for(const def of PESTE){
+    const rings=[];
+    for(const ft of fc.features||[]){if(((ft.properties&&ft.properties.NAME)||"")===def.name)rings.push(...geomRings(ft.geometry||{},160));}
+    if(!rings.length)continue;
+    plagueLayer.add(ringsToSeg(rings,0xe3ac46,.92,R*1.016));
+    const pos=ll2v(def.ll[0],def.ll[1],R*1.02);
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(.013,12,12),matGold);dot.position.copy(pos);
+    const halo=new THREE.Mesh(new THREE.SphereGeometry(.026,14,14),matHalo);dot.add(halo);
+    plagueLayer.add(dot);plagueMarks.push(halo);
+    plagueRegions.push({def,rings});
+  }
+  plagueActive=true;plagueFile=bordersFile;
+  document.getElementById("bEra").innerHTML='mappa del 1300 · <span style="color:var(--gold-2)">☩ Peste Nera — tocca un territorio</span>';
+}
+
+/* ---- risoluzione del click -> regione ---- */
+function resolvePlagueRegion(cx,cy){
+  if(!plagueActive||!plagueRegions.length)return null;
+  const ndc=new THREE.Vector2((cx/innerWidth)*2-1,-(cy/innerHeight)*2+1);
+  ray.setFromCamera(ndc,camera);
+  const hit=ray.intersectObject(earthMesh,false)[0];if(!hit)return null;
+  const loc=globe.worldToLocal(hit.point.clone()).normalize();
+  const ll=v2ll(loc),lat=ll[0],lon=ll[1];
+  for(const rg of plagueRegions){if(rg.rings.some(r=>pip(lon,lat,r)))return rg.def;}
+  let best=null,bd=1e9;
+  for(const rg of plagueRegions){const d=gcDeg(lat,lon,rg.def.ll[0],rg.def.ll[1]);if(d<bd){bd=d;best=rg.def;}}
+  return bd<=7?best:null;
+}
+
+/* ===========================================================================
+   CARD "RULLINO" (post Instagram)
+   =========================================================================== */
+let ig={i:0,n:0,slides:[]};
+const igOverlay=document.getElementById("igOverlay"),igTrack=document.getElementById("igTrack"),
+      igDots=document.getElementById("igDots"),igPrev=document.getElementById("igPrev"),igNext=document.getElementById("igNext");
+let svgUid=0;
+function openIgCard(def){
+  ig={i:0,n:def.slides.length,slides:def.slides};
+  document.getElementById("igAv").innerHTML=IC_SKULL;
+  document.getElementById("igName").textContent=def.label;
+  document.getElementById("igSub").innerHTML=IC_PIN+'<span>Peste Nera · Europa · 1347–1351</span>';
+  document.getElementById("igActions").innerHTML=IC_ACTS+'<span class="ig-count" id="igCount"></span>'+IC_BOOK;
+  igTrack.innerHTML=def.slides.map(s=>`<div class="ig-slide">${plate(s.scene,"u"+(svgUid++))}</div>`).join("");
+  igDots.innerHTML=def.slides.map(()=>"<i></i>").join("");
+  const heart=document.querySelector("#igActions .heart");if(heart)heart.addEventListener("click",()=>heart.classList.toggle("liked"));
+  igGo(0);
+  igOverlay.classList.add("on");document.body.classList.add("modal-open");
+}
+function igClose(){igOverlay.classList.remove("on");document.body.classList.remove("modal-open");}
+function igGo(idx){
+  ig.i=Math.max(0,Math.min(ig.n-1,idx));
+  igTrack.style.transform=`translateX(${-ig.i*100}%)`;
+  [...igDots.children].forEach((d,k)=>d.classList.toggle("on",k===ig.i));
+  igPrev.classList.toggle("hide",ig.i===0);igNext.classList.toggle("hide",ig.i===ig.n-1);
+  const s=ig.slides[ig.i];
+  document.getElementById("igCapt").textContent=s.tag;
+  document.getElementById("igText").innerHTML=s.text;
+  const c=document.getElementById("igCount");if(c)c.textContent=(ig.i+1)+" / "+ig.n;
+}
+igPrev.addEventListener("click",()=>igGo(ig.i-1));
+igNext.addEventListener("click",()=>igGo(ig.i+1));
+document.getElementById("igClose").addEventListener("click",igClose);
+igOverlay.addEventListener("click",e=>{if(e.target===igOverlay)igClose();});
+addEventListener("keydown",e=>{if(!igOverlay.classList.contains("on"))return;
+  if(e.key==="Escape")igClose();else if(e.key==="ArrowLeft")igGo(ig.i-1);else if(e.key==="ArrowRight")igGo(ig.i+1);});
+/* swipe sul rullino */
+(function(){const st=document.getElementById("igStage");let sx=0,on=false;
+  st.addEventListener("pointerdown",e=>{if(e.target.closest(".ig-nav"))return;sx=e.clientX;on=true;});
+  st.addEventListener("pointerup",e=>{if(!on)return;on=false;const dx=e.clientX-sx;if(dx>40)igGo(ig.i-1);else if(dx<-40)igGo(ig.i+1);});})();
+
+
+/* ===========================================================================
+   P5 — SALVA / CARICA LEZIONE (riusa la scena senza richiamare l'IA)
+   =========================================================================== */
+let currentSpec=null;
+document.getElementById("saveBtn").addEventListener("click",()=>{if(!currentSpec)return;
+  const blob=new Blob([JSON.stringify(currentSpec,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=(currentSpec.title||"lezione").replace(/\s+/g,"_")+".json";a.click();});
+document.getElementById("loadBtn").addEventListener("click",()=>document.getElementById("loadFile").click());
+document.getElementById("loadFile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;
+  try{const spec=JSON.parse(await f.text());currentSpec=spec;await renderScene(spec);renderLesson(spec);}catch(err){alert("File lezione non valido.");}
+  e.target.value="";});
+
+/* ---- interazione + tema ---- */
+let progress=0,playing=false,curYearNum=0,modeTarget=0;
+const scrub=document.getElementById("scrub"),curYear=document.getElementById("curYear"),playBtn=document.getElementById("play");
+playBtn.addEventListener("click",()=>{playing=!playing;playBtn.textContent=playing?"❚❚":"▶";});
+scrub.addEventListener("input",e=>{progress=e.target.value/1000;playing=false;playBtn.textContent="▶";});
+let dragging=false,lx=0,ly=0,autoPause=0;const qA=(ax,an)=>new THREE.Quaternion().setFromAxisAngle(ax,an);
+let downT=0,downX=0,downY=0,movedPx=0;
+container.addEventListener("pointerdown",e=>{dragging=true;lx=e.clientX;ly=e.clientY;downT=performance.now();downX=e.clientX;downY=e.clientY;movedPx=0;container.setPointerCapture(e.pointerId);});
+container.addEventListener("pointerup",e=>{dragging=false;autoPause=performance.now()+2500;
+  if(movedPx<6&&performance.now()-downT<500){const rg=resolvePlagueRegion(e.clientX,e.clientY);
+    if(rg){if(quizActive)quizAnswer(rg);else if(!tourActive)openIgCard(rg);}}});
+container.addEventListener("pointermove",e=>{if(!dragging)return;const dx=(e.clientX-lx)*.005,dy=(e.clientY-ly)*.005;lx=e.clientX;ly=e.clientY;
+  movedPx=Math.max(movedPx,Math.hypot(e.clientX-downX,e.clientY-downY));
+  globe.quaternion.premultiply(qA(new THREE.Vector3(0,1,0),dx));globe.quaternion.premultiply(qA(new THREE.Vector3(1,0,0),dy));});
+const THEMES={day:new THREE.Vector3(.15,.12,1),term:new THREE.Vector3(1,.18,.30),night:new THREE.Vector3(0,.05,-1)};
+document.querySelectorAll("#themeBox button").forEach(b=>b.addEventListener("click",()=>{sunTarget.copy(THEMES[b.dataset.theme]).normalize();
+  document.querySelectorAll("#themeBox button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));}));
+
+
+/* ===========================================================================
+   STRUMENTI PER LA CLASSE — modalità presentazione (LIM), tour guidato,
+   quiz leggero "clicca il territorio". Tutto basato sul dataset peste nera.
+   =========================================================================== */
+const byName=nm=>PESTE.find(d=>d.name===nm);
+let qTarget=null;                         /* quaternione bersaglio per il "vola verso" */
+function flyTo(lat,lon){const local=ll2v(lat,lon,1).normalize();
+  qTarget=new THREE.Quaternion().setFromUnitVectors(local,new THREE.Vector3(0,0,1));
+  autoPause=performance.now()+6e5;}
+
+/* prepara il contesto peste (carica la lezione + attiva i confini del 1300) */
+async function ensurePlagueReady(){
+  if(plagueActive)return true;
+  currentSpec=FALLBACK.peste;
+  try{await renderScene(FALLBACK.peste);renderLesson(FALLBACK.peste);}catch(e){}
+  playing=false;document.getElementById("play").textContent="▶";
+  if(!bordersOn){bordersOn=true;bToggle.setAttribute("aria-pressed","true");modeTarget=1;}
+  try{await updateBorders(1349);}catch(e){}
+  return plagueActive;
+}
+
+/* ---------- 1) MODALITÀ PRESENTAZIONE / LIM ---------- */
+let presenting=false;
+const presentBtn=document.getElementById("toolPresent");
+function setPresent(on){
+  presenting=on;document.body.classList.toggle("present",on);
+  presentBtn.classList.toggle("act",on);
+  presentBtn.querySelector("span:last-child").textContent=on?"Esci":"Presentazione";
+}
+presentBtn.addEventListener("click",()=>setPresent(!presenting));
+
+/* ---------- 2) TOUR GUIDATO / AUTOPLAY NARRATIVO ---------- */
+const TOUR=["France","English territory","Holy Roman Empire","Norway","Scotland","Denmark","Sweden","Hungary","Poland"];
+const SLIDE_MS=5200;
+let tourActive=false,tourPaused=false,tourIdx=0,tourTimer=null;
+const tourBar=document.getElementById("tourBar"),tourLabel=document.getElementById("tourLabel"),
+      tourPlay=document.getElementById("tourPlay"),tourStep=document.getElementById("tourStep");
+function clearTourTimer(){if(tourTimer){clearTimeout(tourTimer);tourTimer=null;}}
+function scheduleSlide(){clearTourTimer();if(tourPaused||!tourActive)return;tourTimer=setTimeout(advanceSlide,SLIDE_MS);}
+function updateTourBar(){const def=byName(TOUR[tourIdx]);
+  tourLabel.textContent=def?def.label:"";
+  tourStep.textContent="Tappa "+(tourIdx+1)+" / "+TOUR.length;
+  tourPlay.textContent=tourPaused?"▶":"❚❚";}
+function tourGoRegion(i){
+  if(!tourActive)return;
+  tourIdx=(i+TOUR.length)%TOUR.length;
+  const def=byName(TOUR[tourIdx]);if(!def)return;
+  flyTo(def.ll[0],def.ll[1]);updateTourBar();
+  setTimeout(()=>{if(!tourActive)return;openIgCard(def);igGo(0);scheduleSlide();},680);
+}
+function advanceSlide(){
+  if(!tourActive)return;const def=byName(TOUR[tourIdx]);
+  if(ig.i<def.slides.length-1){igGo(ig.i+1);scheduleSlide();}
+  else if(tourIdx<TOUR.length-1){tourGoRegion(tourIdx+1);}
+  else endTour();
+}
+async function startTour(){
+  if(tourActive)return;
+  if(quizActive||quizBar.classList.contains("on"))quizExit();
+  tourPlay.textContent="…";tourBar.classList.add("on");
+  const ok=await ensurePlagueReady();
+  if(!ok){tourBar.classList.remove("on");alert("Non riesco a caricare la mappa del 1300 (serve la connessione la prima volta).");return;}
+  tourActive=true;tourPaused=false;document.body.classList.add("touring");tourGoRegion(0);
+}
+function endTour(){
+  if(!tourActive&&!tourBar.classList.contains("on"))return;
+  tourActive=false;tourPaused=false;clearTourTimer();qTarget=null;document.body.classList.remove("touring");
+  tourBar.classList.remove("on");igClose();
+}
+tourPlay.addEventListener("click",()=>{tourPaused=!tourPaused;updateTourBar();if(tourPaused)clearTourTimer();else scheduleSlide();});
+document.getElementById("tourPrev").addEventListener("click",()=>{tourPaused=false;tourGoRegion(tourIdx-1);});
+document.getElementById("tourNext").addEventListener("click",()=>{tourPaused=false;tourGoRegion(tourIdx+1);});
+document.getElementById("tourExit").addEventListener("click",endTour);
+document.getElementById("toolTour").addEventListener("click",startTour);
+
+/* ---------- 3) QUIZ LEGGERO — "clicca il territorio" ---------- */
+const QUIZ=[
+  {a:"France",q:"Dove la peste sbarcò a Marsiglia nel gennaio 1348?"},
+  {a:"English territory",q:"Dove arrivò a Melcombe Regis nell'estate 1348?"},
+  {a:"Holy Roman Empire",q:"Dove si diffusero i flagellanti e le persecuzioni del 1349?"},
+  {a:"Norway",q:"Dove approdò a Bergen una nave alla deriva nel 1349?"},
+  {a:"Scotland",q:"Dove i cronisti parlarono della «morte immonda degli inglesi» (1350)?"},
+  {a:"Sweden",q:"Quale regno scandinavo, legato a Santa Brigida, fu raggiunto verso il 1350?"},
+  {a:"Denmark",q:"Quale crocevia tra Mare del Nord e Baltico fu colpito verso il 1350?"},
+  {a:"Poland",q:"Quale regno fu in gran parte risparmiato, sotto Casimiro III?"},
+  {a:"Hungary",q:"Quale regno di Luigi I d'Angiò fu raggiunto nel 1349–50?"}
+];
+let quizActive=false,quizOrder=[],quizPos=0,quizScore=0,quizLock=false;
+const quizBar=document.getElementById("quizBar"),quizQ=document.getElementById("quizQ"),
+      quizMeta=document.getElementById("quizMeta"),quizFx=document.getElementById("quizFx");
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function quizShow(){
+  const item=QUIZ[quizOrder[quizPos]];
+  quizQ.textContent=item.q;
+  quizMeta.innerHTML="Domanda "+(quizPos+1)+" / "+quizOrder.length+" · <b>"+quizScore+" punti</b>";
+  quizFx.className="quiz-fx";quizFx.textContent="";
+}
+async function startQuiz(){
+  if(quizActive)return;
+  if(tourActive)endTour();
+  quizBar.classList.add("on");quizQ.textContent="Preparo la mappa…";quizMeta.textContent="";
+  const ok=await ensurePlagueReady();
+  if(!ok){quizBar.classList.remove("on");alert("Non riesco a caricare la mappa del 1300 (serve la connessione la prima volta).");return;}
+  quizActive=true;quizLock=false;quizScore=0;quizPos=0;
+  quizOrder=shuffle(QUIZ.map((_,i)=>i));
+  flyTo(54,10);quizShow();
+}
+function quizAnswer(def){
+  if(!quizActive||quizLock)return;
+  const target=QUIZ[quizOrder[quizPos]].a,ok=def.name===target,tdef=byName(target);
+  quizLock=true;
+  if(ok){quizScore++;quizFx.className="quiz-fx good";quizFx.textContent="✓ Esatto — "+def.label;}
+  else{quizFx.className="quiz-fx bad";quizFx.textContent="✗ Era "+(tdef?tdef.label:target)+" — hai indicato "+def.label;}
+  quizMeta.innerHTML="Domanda "+(quizPos+1)+" / "+quizOrder.length+" · <b>"+quizScore+" punti</b>";
+  if(tdef)flyTo(tdef.ll[0],tdef.ll[1]);
+  setTimeout(()=>{
+    quizLock=false;quizPos++;
+    if(quizPos>=quizOrder.length)quizEnd();else quizShow();
+  },1650);
+}
+function quizEnd(){
+  const n=quizOrder.length;
+  quizQ.textContent="Quiz completato!";
+  let msg="Bravo!";const r=quizScore/n;
+  if(r<.4)msg="Riprova: rivedi le tappe col tour guidato.";else if(r<.75)msg="Buon lavoro!";else if(r<1)msg="Ottimo!";else msg="Perfetto! Tutte giuste.";
+  quizMeta.innerHTML="<b>"+quizScore+" / "+n+"</b> · "+msg;
+  quizFx.className="quiz-fx";quizFx.textContent="";
+  quizActive=false;quizLock=false;
+}
+function quizExit(){quizActive=false;quizLock=false;quizBar.classList.remove("on");qTarget=null;}
+document.getElementById("quizExit").addEventListener("click",quizExit);
+document.getElementById("quizRestart").addEventListener("click",()=>{quizActive=false;quizLock=false;startQuiz();});
+document.getElementById("toolQuiz").addEventListener("click",startQuiz);
+
+/* ---------- Esc globale + chiusura card durante il tour ---------- */
+addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  if(quizActive||quizBar.classList.contains("on")){quizExit();return;}
+  if(tourActive){endTour();return;}
+  if(igOverlay.classList.contains("on"))return;     /* card da sola: la gestisce già la card */
+  if(presenting)setPresent(false);
+});
+document.getElementById("igClose").addEventListener("click",()=>{if(tourActive)endTour();});
+igOverlay.addEventListener("click",e=>{if(e.target===igOverlay&&tourActive)endTour();});
+
+
+function animate(){requestAnimationFrame(animate);const t=performance.now();
+  if(qTarget){globe.quaternion.slerp(qTarget,.07);if(globe.quaternion.angleTo(qTarget)<.01){globe.quaternion.copy(qTarget);qTarget=null;}}
+  else if(!dragging&&t>autoPause&&!tourActive&&!quizActive)globe.quaternion.premultiply(qA(new THREE.Vector3(0,1,0),.0008));
+  if(plagueActive&&plagueMarks.length){for(let i=0;i<plagueMarks.length;i++)plagueMarks[i].scale.setScalar(1+Math.sin(t*0.004+i*0.7)*0.35);}
+  sun.lerp(sunTarget,.05).normalize();uniforms.sunDir.value.copy(sun);
+  uniforms.mode.value+=(modeTarget-uniforms.mode.value)*.08;
+  if(playing&&updaters.length){progress=(progress+.0014)%1;scrub.value=progress*1000;}
+  if(updaters.length){updaters.forEach(u=>u(progress));curYear.textContent=yearAt(progress);curYearNum=curYearFn(progress);}
+  if(bordersOn&&nearestFile(curYearNum).f!==bordersFile&&!bordersBusy)updateBorders(curYearNum);
+  if(bordersOn&&bordersObj&&bordersObj.userData.labels){
+    const lab=bordersObj.userData.labels.children,shown=[],W=innerWidth,H=innerHeight,minD=Math.min(W,H)*0.085;
+    for(let i=0;i<lab.length;i++){const sp=lab[i];sp.getWorldPosition(_tmp);
+      if(_tmp.z<=0.3){sp.visible=false;continue;}
+      _tmp.project(camera);const sx=(_tmp.x*0.5+0.5)*W,sy=(-_tmp.y*0.5+0.5)*H;
+      let ok=true;for(let j=0;j<shown.length;j++){const dx=sx-shown[j][0],dy=sy-shown[j][1];if(dx*dx+dy*dy<minD*minD){ok=false;break;}}
+      sp.visible=ok;if(ok)shown.push([sx,sy]);}}
+  for(let i=0;i<sceneLabels.length;i++){sceneLabels[i].getWorldPosition(_tmp);sceneLabels[i].visible=_tmp.z>0.15;}
+  renderer.render(scene,camera);}
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+animate();
+</script>
+</body>
+</html>
