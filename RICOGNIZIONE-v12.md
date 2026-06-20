@@ -9,6 +9,37 @@
 
 ---
 
+## Stato temporaneo da assorbire in GlobeEngine
+
+Mano a mano che i blocchi del motore vengono portati, ogni file teneva il proprio stato
+"alla v12" (`let`/`const` di modulo, o un oggetto restituito da una factory) invece di
+inventare i campi di una classe che non esisteva ancora. Dal blocco 5 la classe
+`engine/GlobeEngine.ts` esiste e possiede questo stato come campi **privati**: la
+tabella sotto registra cosa è stato assorbito e come, e cosa resta ancora a livello
+di modulo (di proposito, vedi sotto).
+
+| File | Stato (era) | Stato (ora, dal blocco 5) |
+|---|---|---|
+| `engine/scene.ts` | `aiLayer`, `updaters`, `sceneLabels`, `yearAt`, `curYearFn`, `lastDataNote` — `let`/`const` di modulo | raggruppati in `SceneRuntimeState` (`createSceneState()`); `GlobeEngine` ne possiede una copia privata (`this.sceneState`) e la passa per riferimento a `renderScene`/`clearScene`/`createLoop`. `matGold`/`matHalo`/`makeLabel`/`makeShip`/`placeShip` restano funzioni/risorse condivise senza stato proprio (nessuna le muta dopo la creazione: innocuo condividerle) |
+| `engine/borders.ts` | `bordersFile`, `bordersObj`, `bordersBusy`, `bordersOn` — `let` di modulo esportati | raggruppati in `BordersRuntimeState` (`createBordersState()`); `GlobeEngine` la possiede come `this.bordersState`. `geoCache`/`bordersCache` (cache di fetch/build, non "stato" nel senso di *cosa sto mostrando ora*) restano cache di modulo |
+| `engine/globe.ts` | `createGlobe(container)` ritorna un oggetto `Globe` | invariato: `GlobeEngine.mount()` lo chiama e tiene il risultato in `this.globeHandle` |
+| `engine/loop.ts` | `createLoop(g, onTick, ...)` leggeva `updaters`/`sceneLabels`/`yearAt`/`curYearFn`/`bordersOn`/`bordersFile`/`bordersObj`/`bordersBusy` da import live di scene.ts/borders.ts | ora li riceve per riferimento via `LoopDeps.scene`/`LoopDeps.borders` (gli stessi `SceneRuntimeState`/`BordersRuntimeState` di GlobeEngine) — `progress`/`playing`/`curYearNum`/`rafId` restano chiusi nella closure di `createLoop`, e `GlobeEngine` tiene il `LoopHandle` in `this.loopHandle` |
+| `engine/controls.ts` | `dragging`, `autoPause`, `qTarget` — `let` di modulo esportati | **non toccato in questo blocco** (il blocco 5 ha assorbito solo "i let di borders.ts e scene.ts", per scelta esplicita) — resta condiviso a livello di modulo; se si creassero due `GlobeEngine` insieme questi tre si calpesterebbero a vicenda. Gap noto, non ancora un problema (un solo motore montato in App.tsx) |
+
+**Ponti ancora da collegare** (parametri/callback già pronti, in attesa del blocco o
+dell'integrazione che li userà davvero):
+- `GlobeEngine`: `pickPlagueRegionAt`/`enablePlague` sono solo commenti placeholder
+  (in attesa di `engine/plague.ts`); l'`onTap` passato a `attachPointerControls` dentro
+  `mount()` non fa ancora nulla (in attesa dello stesso); `onPlagueRegionClick` è accettato
+  nel costruttore ma nessun metodo lo chiama ancora.
+- `engine/loop.ts`: `tickPlague?` (in attesa di `engine/plague.ts`), `isIdleSpinSuppressed?`
+  ora è collegato (`GlobeEngine.setIdleSpinSuppressed(on)`), ma nessuna feature lo chiama
+  ancora (in attesa che tour/quiz, stato React/`modeSlice`, vengano collegati).
+- `App.tsx`: monta/smonta `GlobeEngine` (blocco 5), ma non chiama ancora `renderScene`/
+  `setBorders`/ecc. — niente è ancora collegato allo store Redux né alle feature.
+
+---
+
 ## 1. Motore 3D — `src/engine/` (TypeScript framework-agnostico, NO React)
 
 | Sezione v12 | Funzioni | Destinazione |
@@ -80,16 +111,19 @@ Proxy `/api/genera` + `/api/lezione` (web_search), rate limit, cache, gestione e
 
 ## Interfaccia di comando `GlobeEngine` (il ponte React → motore)
 
-React non tocca three.js: chiama metodi su un'istanza di `GlobeEngine`. Superficie minima suggerita,
-ricavata da cosa il v12 fa già:
+React non tocca three.js: chiama metodi su un'istanza di `GlobeEngine` (ora vera, in
+`engine/GlobeEngine.ts`, blocco 5). Stato della superficie:
 
-- `mount(container)` / `dispose()`
-- `renderScene(spec)` — disegna un archetipo
-- `setBorders(on)` / `setYear(year)` — switch confini + scrubber
-- `enablePlague(on)` / `flyTo(lat, lon)` — usati da tour e quiz
-- `pickPlagueRegionAt(x, y)` → `name | null` — per il click/quiz
-- `setPlaying(on)` / `setProgress(p)` — comandi della timeline (v12: `playing`, `scrub.value`)
-- callback verso React: `onPlagueRegionClick(name)`, `onSceneReady()`, **`onTick(progress, playing, year)`** — l'unico modo in cui lo stato di animazione raggiunge la UI (mai via Redux, vedi §4)
+- `mount(container)` / `dispose()` — **implementati**: costruiscono/distruggono `engine/globe.ts` (`createGlobe`), agganciano `engine/controls.ts` (`attachPointerControls`) e avviano/fermano `engine/loop.ts` (`createLoop(...).start()/stop()`)
+- `renderScene(spec)` — **implementato** (`engine/scene.ts`, su `this.sceneState`), chiama `onSceneReady()` al termine
+- `setBorders(on)` — **implementato**: `borders.setBordersOn(this.bordersState, on)` (visibilità) + `globe.setBordersBlend(this.globeHandle, on)` (shader)
+- `setYear(year)` — **implementato**: carica/attiva i confini per un anno specifico (v12: come faceva `ensurePlagueReady` con `updateBorders(1349)`), indipendente dallo scrubber; non accende `setBorders` da solo
+- `setTheme(theme)` — **implementato**, tema luce del globo (`globe.ts`: `"day"|"term"|"night"`)
+- `flyTo(lat, lon)` — **implementato**, passa a `engine/controls.ts`
+- `setIdleSpinSuppressed(on)` — **implementato**: sostituisce `!tourActive&&!quizActive` del v12 dentro `animate()`; nessuna feature lo chiama ancora
+- `enablePlague(on)` / `pickPlagueRegionAt(x, y)` → `name | null` — **placeholder commentati** in `GlobeEngine.ts`, in attesa di `engine/plague.ts`
+- `setPlaying(on)` / `setProgress(p)` — **implementati**, passano a `engine/loop.ts` (`LoopHandle`)
+- callback verso React (costruttore `GlobeEngineCallbacks`): `onTick({progress, playing, yearLabel})` (mai via Redux, vedi §4), `onBordersEraChange(eraLabel)` (epoca dei confini, v12: testo di `#bEra` — diversa da `onTick`), `onSceneReady()` — **collegate**; `onPlagueRegionClick(name)` — **accettata ma non ancora chiamata** (in attesa di `engine/plague.ts`)
 
 > **`setPresent` NON fa parte di questa interfaccia.** La modalità presentazione non tocca mai il motore: è solo `body.present` gestita da React in `features/present/` a partire da `modeSlice.present`.
 
