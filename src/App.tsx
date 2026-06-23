@@ -9,6 +9,7 @@ import { routePlagueClick } from "./plagueClickRoute";
 import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
 import Controls from "./features/controls/Controls";
+import Timeline from "./features/timeline/Timeline";
 
 // TODO(features/quiz): la feature non esiste ancora (RICOGNIZIONE-v12.md §5) — quando
 // arriva, collegare qui quizAnswer(name) invece di limitarsi a loggare.
@@ -105,11 +106,6 @@ export default function App() {
       <div style={{ position: "relative", zIndex: 1, color: "#fff", padding: 16 }}>
         <h1>Atlante Sincronico</h1>
         <p>Scaffold pronto — tema corrente: {theme}</p>
-        {tick && (
-          <p>
-            anno: {tick.yearLabel} · progress: {tick.progress.toFixed(2)} · playing: {String(tick.playing)}
-          </p>
-        )}
       </div>
       <div style={{ position: "fixed", left: 16, bottom: 16, zIndex: 1 }}>
         <Generator />
@@ -119,6 +115,13 @@ export default function App() {
       </div>
       <div style={{ position: "fixed", right: 16, top: 16, zIndex: 1 }}>
         <Controls />
+      </div>
+      <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", zIndex: 1 }}>
+        <Timeline
+          tick={tick}
+          onSetPlaying={(on) => engineRef.current?.setPlaying(on)}
+          onSetProgress={(p) => engineRef.current?.setProgress(p)}
+        />
       </div>
     </div>
   );

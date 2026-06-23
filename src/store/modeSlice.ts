@@ -21,6 +21,10 @@ export interface ModeState {
   bordersOn: boolean;
   // tema luce del globo
   theme: Theme;
+  // intento dell'utente sulla timeline (play/pausa) — il dato vivo (progress/playing/anno
+  // reale) sta nel motore (engine/loop.ts) e arriva a React solo via onTick, mai da qui;
+  // questo campo è scritto da features/timeline/ ma non letto da lì (RICOGNIZIONE-v12.md §4).
+  playing: boolean;
 }
 
 const initialState: ModeState = {
@@ -35,6 +39,7 @@ const initialState: ModeState = {
   plagueActive: false,
   bordersOn: false,
   theme: "day",
+  playing: false,
 };
 
 const modeSlice = createSlice({
@@ -81,6 +86,9 @@ const modeSlice = createSlice({
     setTheme(state, action: PayloadAction<Theme>) {
       state.theme = action.payload;
     },
+    setPlaying(state, action: PayloadAction<boolean>) {
+      state.playing = action.payload;
+    },
   },
 });
 
@@ -96,6 +104,7 @@ export const {
   setPlagueActive,
   setBordersOn,
   setTheme,
+  setPlaying,
 } = modeSlice.actions;
 export default modeSlice.reducer;
 
@@ -114,3 +123,4 @@ export const selectPresent = (state: RootState) => state.mode.present;
 export const selectTheme = (state: RootState) => state.mode.theme;
 export const selectBordersOn = (state: RootState) => state.mode.bordersOn;
 export const selectPlagueActive = (state: RootState) => state.mode.plagueActive;
+export const selectPlaying = (state: RootState) => state.mode.playing;

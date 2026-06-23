@@ -5,6 +5,7 @@ import modeReducer, {
   endTour,
   setBordersOn,
   setPlagueActive,
+  setPlaying,
   setPresent,
   setTheme,
   setTourIdx,
@@ -29,6 +30,7 @@ describe("modeSlice reducers", () => {
       plagueActive: false,
       bordersOn: false,
       theme: "day",
+      playing: false,
     });
   });
 
@@ -75,5 +77,10 @@ describe("modeSlice reducers", () => {
     expect(modeReducer(undefined, setPlagueActive(true)).plagueActive).toBe(true);
     expect(modeReducer(undefined, setBordersOn(true)).bordersOn).toBe(true);
     expect(modeReducer(undefined, setTheme("night")).theme).toBe("night");
+  });
+
+  it("setPlaying registra solo l'intento dell'utente (il dato vivo resta nel motore, non qui)", () => {
+    expect(modeReducer(undefined, setPlaying(true)).playing).toBe(true);
+    expect(modeReducer(undefined, setPlaying(false)).playing).toBe(false);
   });
 });
