@@ -8,6 +8,7 @@ import { selectBordersOn, selectPlagueActive, selectTheme } from "./store/modeSl
 import { routePlagueClick } from "./plagueClickRoute";
 import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
+import Controls from "./features/controls/Controls";
 
 // TODO(features/quiz): la feature non esiste ancora (RICOGNIZIONE-v12.md §5) — quando
 // arriva, collegare qui quizAnswer(name) invece di limitarsi a loggare.
@@ -115,6 +116,9 @@ export default function App() {
       </div>
       <div style={{ position: "fixed", right: 16, bottom: 16, zIndex: 1 }}>
         <Lesson />
+      </div>
+      <div style={{ position: "fixed", right: 16, top: 16, zIndex: 1 }}>
+        <Controls />
       </div>
     </div>
   );
