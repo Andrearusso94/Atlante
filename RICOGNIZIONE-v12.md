@@ -124,6 +124,11 @@ scrubber porta l'anno al 1500 senza passare da `setYear`/`setBorders`, il layer 
 ## 7. Backend — `worker/index.ts` — **già fatto**
 Proxy `/api/genera` + `/api/lezione` (web_search), rate limit, cache, gestione errori.
 
+> **Checkpoint verificato dal vivo**: generazione IA end-to-end in locale (`wrangler dev`
+> + proxy Vite di `/api/*`) — scena reale generata da `features/generator/` (es. "guerre
+> puniche", "rivoluzione francese"), `lastDataNote` mostrato correttamente, `.dev.vars`
+> correttamente escluso da git.
+
 ---
 
 ## Interfaccia di comando `GlobeEngine` (il ponte React → motore)
