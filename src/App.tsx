@@ -6,6 +6,7 @@ import { FALLBACK } from "./data/fallback";
 import { selectCurrentSpec, setCurrentSpec } from "./store/specSlice";
 import { selectBordersOn, selectPlagueActive, selectTheme } from "./store/modeSlice";
 import { routePlagueClick } from "./plagueClickRoute";
+import Generator from "./features/generator/Generator";
 
 // TODO(features/quiz): la feature non esiste ancora (RICOGNIZIONE-v12.md §5) — quando
 // arriva, collegare qui quizAnswer(name) invece di limitarsi a loggare.
@@ -107,6 +108,9 @@ export default function App() {
             anno: {tick.yearLabel} · progress: {tick.progress.toFixed(2)} · playing: {String(tick.playing)}
           </p>
         )}
+      </div>
+      <div style={{ position: "fixed", left: 16, bottom: 16, zIndex: 1 }}>
+        <Generator />
       </div>
     </div>
   );
