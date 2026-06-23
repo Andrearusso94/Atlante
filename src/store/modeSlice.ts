@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { RootState } from "./index";
 
 export type Theme = "day" | "term" | "night";
 
@@ -97,3 +98,19 @@ export const {
   setTheme,
 } = modeSlice.actions;
 export default modeSlice.reducer;
+
+export const selectTour = (state: RootState) => ({
+  active: state.mode.tourActive,
+  idx: state.mode.tourIdx,
+  paused: state.mode.tourPaused,
+});
+export const selectQuiz = (state: RootState) => ({
+  active: state.mode.quizActive,
+  score: state.mode.quizScore,
+  pos: state.mode.quizPos,
+  order: state.mode.quizOrder,
+});
+export const selectPresent = (state: RootState) => state.mode.present;
+export const selectTheme = (state: RootState) => state.mode.theme;
+export const selectBordersOn = (state: RootState) => state.mode.bordersOn;
+export const selectPlagueActive = (state: RootState) => state.mode.plagueActive;

@@ -30,3 +30,17 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
+
+/** Forma serializzabile di un `ApiError`, per i `rejectWithValue` dei thunk Redux
+ * (un'istanza di classe nel payload di un'action rotterebbe la serializable-check). */
+export interface ApiErrorInfo {
+  code: ApiErrorCode;
+  message: string;
+}
+
+/** `generate()`/`aiLesson()` lanciano solo `ApiError`; il ramo else resta come confine
+ * difensivo del `catch (err: unknown)` dei thunk. */
+export function toApiErrorInfo(err: unknown): ApiErrorInfo {
+  if (err instanceof ApiError) return { code: err.code, message: err.message };
+  return { code: "internal_error", message: err instanceof Error ? err.message : String(err) };
+}
