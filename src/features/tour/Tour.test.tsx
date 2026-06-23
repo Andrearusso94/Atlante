@@ -13,12 +13,13 @@ function renderTour(preload?: { bordersOn?: boolean; plagueActive?: boolean }) {
   if (preload?.bordersOn) store.dispatch(setBordersOn(true));
   if (preload?.plagueActive) store.dispatch(setPlagueActive(true));
   const onFlyTo = vi.fn();
+  const onOpenIgCard = vi.fn();
   render(
     <Provider store={store}>
-      <Tour onFlyTo={onFlyTo} />
+      <Tour onFlyTo={onFlyTo} onOpenIgCard={onOpenIgCard} />
     </Provider>,
   );
-  return { store, onFlyTo };
+  return { store, onFlyTo, onOpenIgCard };
 }
 
 function advance(ms: number) {
@@ -43,8 +44,8 @@ describe("Tour", () => {
     expect(onFlyTo).not.toHaveBeenCalled();
   });
 
-  it("avvio: attiva tour, forza confini+peste (se non già attivi) e vola sulla prima regione", () => {
-    const { store, onFlyTo } = renderTour();
+  it("avvio: attiva tour, forza confini+peste (se non già attivi), vola sulla prima regione e apre la sua card", () => {
+    const { store, onFlyTo, onOpenIgCard } = renderTour();
 
     fireEvent.click(screen.getByText("🎬 Tour guidato"));
 
@@ -57,18 +58,21 @@ describe("Tour", () => {
     });
     const france = byName(TOUR[0])!;
     expect(onFlyTo).toHaveBeenCalledWith(france.ll[0], france.ll[1]);
+    expect(onOpenIgCard).toHaveBeenCalledWith(TOUR[0]);
     screen.getByText("Francia");
     screen.getByText(`Tappa 1 / ${TOUR.length}`);
   });
 
-  it("avanza automaticamente ogni SLIDE_MS alla tappa successiva, volandoci", () => {
-    const { store, onFlyTo } = renderTour();
+  it("avanza automaticamente ogni SLIDE_MS alla tappa successiva, volandoci e aprendo la sua card", () => {
+    const { store, onFlyTo, onOpenIgCard } = renderTour();
     fireEvent.click(screen.getByText("🎬 Tour guidato"));
     onFlyTo.mockClear();
+    onOpenIgCard.mockClear();
 
     advance(SLIDE_MS);
 
     expect(store.getState().mode.tourIdx).toBe(1);
+    expect(onOpenIgCard).toHaveBeenCalledWith(TOUR[1]);
     const england = byName(TOUR[1])!;
     expect(onFlyTo).toHaveBeenCalledWith(england.ll[0], england.ll[1]);
   });
@@ -115,7 +119,11 @@ describe("Tour", () => {
 
     advance(SLIDE_MS);
 
-    expect(store.getState().mode).toMatchObject({ tourActive: false, bordersOn: false, plagueActive: false });
+    expect(store.getState().mode).toMatchObject({
+      tourActive: false,
+      bordersOn: false,
+      plagueActive: false,
+    });
   });
 
   it("non disattiva confini/peste all'uscita se erano già attivi prima del tour", () => {
@@ -124,7 +132,11 @@ describe("Tour", () => {
 
     fireEvent.click(screen.getByLabelText("Esci dal tour"));
 
-    expect(store.getState().mode).toMatchObject({ tourActive: false, bordersOn: true, plagueActive: true });
+    expect(store.getState().mode).toMatchObject({
+      tourActive: false,
+      bordersOn: true,
+      plagueActive: true,
+    });
   });
 
   it("l'uscita manuale ferma il timer: il tempo che passa dopo non muove più nulla", () => {

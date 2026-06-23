@@ -18,17 +18,20 @@ export interface TourProps {
   /** Comando al motore (GlobeEngine.flyTo) — l'istanza vive in App.tsx, come in
    * features/timeline/ per setPlaying/setProgress. Il motore non sa nulla del tour. */
   onFlyTo: (lat: number, lon: number) => void;
+  /** Apre la card Instagram (features/igCard) per la tappa corrente — stesso prop
+   * pattern di onFlyTo, l'istanza della card vive in App.tsx. */
+  onOpenIgCard: (name: string) => void;
 }
 
 // v12 (startTour/endTour/advanceSlide/scheduleSlide/tourGoRegion/updateTourBar). Qui
-// ogni tappa = una regione di TOUR: niente carosello di sotto-slide dentro la card
-// (quello arriva con features/igCard, non ancora costruita — vedi il segnaposto TODO
-// più sotto). tourActive/tourIdx/tourPaused vivono in modeSlice (RICOGNIZIONE-v12.md
-// §4); il motore non sa nulla del tour, riceve solo flyTo via prop —
-// setIdleSpinSuppressed/enablePlague/setBorders restano cablati reattivamente in
-// App.tsx a partire da modeSlice (blocco 10): non li richiamiamo qui per non
-// duplicare quella logica.
-export default function Tour({ onFlyTo }: TourProps) {
+// ogni tappa = una regione di TOUR: niente timer per sotto-slide dentro la card, il
+// rullino di features/igCard si naviga a mano (prev/next/swipe/tastiera) mentre il
+// timer del Tour avanza comunque alla regione successiva ogni SLIDE_MS. tourActive/
+// tourIdx/tourPaused vivono in modeSlice (RICOGNIZIONE-v12.md §4); il motore non sa
+// nulla del tour, riceve solo flyTo via prop — setIdleSpinSuppressed/enablePlague/
+// setBorders restano cablati reattivamente in App.tsx a partire da modeSlice (blocco
+// 10): non li richiamiamo qui per non duplicare quella logica.
+export default function Tour({ onFlyTo, onOpenIgCard }: TourProps) {
   const dispatch = useAppDispatch();
   const { active: tourActive, idx: tourIdx, paused: tourPaused } = useAppSelector(selectTour);
   const bordersOn = useAppSelector(selectBordersOn);
@@ -70,14 +73,15 @@ export default function Tour({ onFlyTo }: TourProps) {
     dispatch(setTourPaused(!tourPaused));
   }
 
-  // v12 (tourGoRegion): vola sulla regione corrente ogni volta che il tour parte o
-  // cambia tappa.
+  // v12 (tourGoRegion): vola sulla regione corrente e apre la sua card Instagram ogni
+  // volta che il tour parte o cambia tappa.
   useEffect(() => {
     if (!tourActive) return;
     const region = byName(TOUR[tourIdx]);
     if (!region) return;
     onFlyTo(region.ll[0], region.ll[1]);
-  }, [tourActive, tourIdx, onFlyTo]);
+    onOpenIgCard(region.name);
+  }, [tourActive, tourIdx, onFlyTo, onOpenIgCard]);
 
   // v12 (scheduleSlide/advanceSlide/clearTourTimer): un timer per tappa. La pausa lo
   // ferma (cleanup, niente nuovo setTimeout); la ripresa lo riavvia con SLIDE_MS pieno,
@@ -101,7 +105,6 @@ export default function Tour({ onFlyTo }: TourProps) {
   }
 
   const region = byName(TOUR[tourIdx]);
-  const slide = region?.slides[0];
 
   return (
     <div className={styles.bar} role="group" aria-label="Tour guidato">
@@ -113,10 +116,20 @@ export default function Tour({ onFlyTo }: TourProps) {
       >
         ‹
       </button>
-      <button type="button" className={styles.nav} aria-label="Play/Pausa" onClick={handleTogglePause}>
+      <button
+        type="button"
+        className={styles.nav}
+        aria-label="Play/Pausa"
+        onClick={handleTogglePause}
+      >
         {tourPaused ? "▶" : "❚❚"}
       </button>
-      <button type="button" className={styles.nav} aria-label="Tappa successiva" onClick={() => goRegion(tourIdx + 1)}>
+      <button
+        type="button"
+        className={styles.nav}
+        aria-label="Tappa successiva"
+        onClick={() => goRegion(tourIdx + 1)}
+      >
         ›
       </button>
       <div className={styles.id}>
@@ -125,17 +138,6 @@ export default function Tour({ onFlyTo }: TourProps) {
           Tappa {tourIdx + 1} / {TOUR.length}
         </div>
       </div>
-      {/* TODO(features/igCard): qui andrà la card Instagram vera (RICOGNIZIONE-v12.md
-          §5, carosello di sotto-slide con plate() SVG) — finché non esiste mostriamo
-          solo la prima slide della regione come segnaposto, non bloccante. */}
-      {slide && (
-        <div className={styles.card}>
-          <p className={styles.tag}>{slide.tag}</p>
-          {/* v12 (#igText.innerHTML=s.text): testo curato a mano con markup minimo
-              (<b>), non input utente/IA — stesso livello di fiducia di data/peste.ts. */}
-          <p className={styles.text} dangerouslySetInnerHTML={{ __html: slide.text }} />
-        </div>
-      )}
       <button type="button" className={styles.exit} aria-label="Esci dal tour" onClick={handleExit}>
         ✕
       </button>

@@ -12,12 +12,7 @@ import Controls from "./features/controls/Controls";
 import Timeline from "./features/timeline/Timeline";
 import Tour from "./features/tour/Tour";
 import Quiz, { type QuizClick } from "./features/quiz/Quiz";
-
-// TODO(features/igCard): la feature "Card Instagram" non esiste ancora
-// (RICOGNIZIONE-v12.md §5) — quando arriva, collegare qui openIgCard(name).
-function openIgCardPlaceholder(name: string): void {
-  console.info(`[igCard TODO] apri card Peste per "${name}"`);
-}
+import IgCard, { type IgCardOpen } from "./features/igCard/IgCard";
 
 // Cablaggio centrale store Redux <-> GlobeEngine (blocco 10). Vive in App.tsx perché il
 // coordinatore del click sul globo deve conoscere insieme lo stato di più feature
@@ -37,8 +32,19 @@ export default function App() {
   const engineRef = useRef<GlobeEngine | null>(null);
   const modeRef = useRef({ tourActive, quizActive });
   const quizClickSeqRef = useRef(0);
+  const igCardSeqRef = useRef(0);
   const [tick, setTick] = useState<TickPayload | null>(null);
   const [quizClick, setQuizClick] = useState<QuizClick | null>(null);
+  const [igCardOpen, setIgCardOpen] = useState<IgCardOpen | null>(null);
+
+  // Apre la card Instagram (features/igCard) per la regione `name` — chiamata sia dal
+  // coordinatore del click sul globo qui sotto, sia dalle tappe del Tour (prop
+  // onOpenIgCard). `seq` distingue due aperture sulla stessa regione di fila, stesso
+  // pattern di quizClickSeqRef/setQuizClick.
+  function openIgCard(name: string) {
+    igCardSeqRef.current += 1;
+    setIgCardOpen({ name, seq: igCardSeqRef.current });
+  }
 
   // Letta dal coordinatore del click (closure stabile creata una sola volta in mount()):
   // un ref evita di dover ricreare GlobeEngine ad ogni cambio di tour/quiz.
@@ -59,7 +65,7 @@ export default function App() {
             setQuizClick({ name, seq: quizClickSeqRef.current });
             break;
           case "igCard":
-            openIgCardPlaceholder(name);
+            openIgCard(name);
             break;
           case "tour":
             break; // v12: durante un tour il tap non fa nulla
@@ -115,19 +121,39 @@ export default function App() {
       <div style={{ position: "fixed", right: 16, top: 16, zIndex: 1 }}>
         <Controls />
       </div>
-      <div style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", zIndex: 1 }}>
+      <div
+        style={{
+          position: "fixed",
+          left: "50%",
+          bottom: 16,
+          transform: "translateX(-50%)",
+          zIndex: 1,
+        }}
+      >
         <Timeline
           tick={tick}
           onSetPlaying={(on) => engineRef.current?.setPlaying(on)}
           onSetProgress={(p) => engineRef.current?.setProgress(p)}
         />
       </div>
-      <div style={{ position: "fixed", left: "50%", top: 16, transform: "translateX(-50%)", zIndex: 1 }}>
-        <Tour onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
+      <div
+        style={{
+          position: "fixed",
+          left: "50%",
+          top: 16,
+          transform: "translateX(-50%)",
+          zIndex: 1,
+        }}
+      >
+        <Tour
+          onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)}
+          onOpenIgCard={openIgCard}
+        />
       </div>
       <div style={{ position: "fixed", left: 16, top: 16, zIndex: 1 }}>
         <Quiz click={quizClick} onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
       </div>
+      <IgCard open={igCardOpen} />
     </div>
   );
 }
