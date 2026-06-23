@@ -53,6 +53,9 @@ export const PESTE: PlagueRegion[] = [
     {scene:"macabre",tag:"Un quadro incerto",text:"I dati ungheresi sono incerti; resta la testimonianza di un'epidemia che non risparmia il cuore dell'Europa centrale."}]}
 ];
 
+// Lookup di una regione per nome (v12: `byName`) — helper dati condiviso da tour, quiz e igCard.
+export const byName = (name: string): PlagueRegion | undefined => PESTE.find((d) => d.name === name);
+
 // Ordine del Tour guidato (nomi = campo 'name' delle regioni).
 export const TOUR: string[] = ["France","English territory","Holy Roman Empire","Norway","Scotland","Denmark","Sweden","Hungary","Poland"];
 

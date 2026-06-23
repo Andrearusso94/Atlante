@@ -1,0 +1,101 @@
+/* Minimale e funzionale — lo stile vero arriva nel blocco CSS dedicato. */
+
+.launch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eef1f6;
+  border: 1px solid rgba(120, 150, 200, 0.18);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.launch:hover {
+  border-color: #e3ac46;
+  color: #f3d28f;
+  background: rgba(227, 172, 70, 0.08);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(15, 22, 38, 0.66);
+  border: 1px solid rgba(120, 150, 200, 0.18);
+  border-radius: 16px;
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+.nav {
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef1f6;
+  border: 1px solid rgba(120, 150, 200, 0.18);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.nav:hover {
+  border-color: #e3ac46;
+  color: #f3d28f;
+  background: rgba(227, 172, 70, 0.14);
+}
+
+.id {
+  padding: 0 6px;
+  min-width: 120px;
+}
+
+.label {
+  font-size: 15px;
+  color: #f3d28f;
+  line-height: 1.1;
+}
+
+.step {
+  font-size: 10px;
+  color: #9aa6bd;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.card {
+  max-width: 260px;
+  padding: 0 6px;
+}
+
+.tag {
+  margin: 0;
+  font-size: 10px;
+  color: #6fd3e0;
+}
+
+.text {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #eef1f6;
+  line-height: 1.35;
+}
+
+.exit {
+  background: transparent;
+  border: none;
+  color: #9aa6bd;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  flex: 0 0 auto;
+}
+
+.exit:hover {
+  color: #eef1f6;
+}

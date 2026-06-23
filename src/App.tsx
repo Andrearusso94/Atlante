@@ -10,6 +10,7 @@ import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
 import Controls from "./features/controls/Controls";
 import Timeline from "./features/timeline/Timeline";
+import Tour from "./features/tour/Tour";
 
 // TODO(features/quiz): la feature non esiste ancora (RICOGNIZIONE-v12.md §5) — quando
 // arriva, collegare qui quizAnswer(name) invece di limitarsi a loggare.
@@ -122,6 +123,9 @@ export default function App() {
           onSetPlaying={(on) => engineRef.current?.setPlaying(on)}
           onSetProgress={(p) => engineRef.current?.setProgress(p)}
         />
+      </div>
+      <div style={{ position: "fixed", left: "50%", top: 16, transform: "translateX(-50%)", zIndex: 1 }}>
+        <Tour onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
       </div>
     </div>
   );
