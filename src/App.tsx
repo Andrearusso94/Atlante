@@ -7,6 +7,7 @@ import { selectCurrentSpec, setCurrentSpec } from "./store/specSlice";
 import { selectBordersOn, selectPlagueActive, selectTheme } from "./store/modeSlice";
 import { routePlagueClick } from "./plagueClickRoute";
 import Generator from "./features/generator/Generator";
+import Lesson from "./features/lesson/Lesson";
 
 // TODO(features/quiz): la feature non esiste ancora (RICOGNIZIONE-v12.md §5) — quando
 // arriva, collegare qui quizAnswer(name) invece di limitarsi a loggare.
@@ -111,6 +112,9 @@ export default function App() {
       </div>
       <div style={{ position: "fixed", left: 16, bottom: 16, zIndex: 1 }}>
         <Generator />
+      </div>
+      <div style={{ position: "fixed", right: 16, bottom: 16, zIndex: 1 }}>
+        <Lesson />
       </div>
     </div>
   );
