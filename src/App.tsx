@@ -11,12 +11,7 @@ import Lesson from "./features/lesson/Lesson";
 import Controls from "./features/controls/Controls";
 import Timeline from "./features/timeline/Timeline";
 import Tour from "./features/tour/Tour";
-
-// TODO(features/quiz): la feature non esiste ancora (RICOGNIZIONE-v12.md §5) — quando
-// arriva, collegare qui quizAnswer(name) invece di limitarsi a loggare.
-function quizAnswerPlaceholder(name: string): void {
-  console.info(`[quiz TODO] risposta tap su "${name}"`);
-}
+import Quiz, { type QuizClick } from "./features/quiz/Quiz";
 
 // TODO(features/igCard): la feature "Card Instagram" non esiste ancora
 // (RICOGNIZIONE-v12.md §5) — quando arriva, collegare qui openIgCard(name).
@@ -41,7 +36,9 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<GlobeEngine | null>(null);
   const modeRef = useRef({ tourActive, quizActive });
+  const quizClickSeqRef = useRef(0);
   const [tick, setTick] = useState<TickPayload | null>(null);
+  const [quizClick, setQuizClick] = useState<QuizClick | null>(null);
 
   // Letta dal coordinatore del click (closure stabile creata una sola volta in mount()):
   // un ref evita di dover ricreare GlobeEngine ad ogni cambio di tour/quiz.
@@ -58,7 +55,8 @@ export default function App() {
       onPlagueRegionClick: (name) => {
         switch (routePlagueClick(modeRef.current)) {
           case "quiz":
-            quizAnswerPlaceholder(name);
+            quizClickSeqRef.current += 1;
+            setQuizClick({ name, seq: quizClickSeqRef.current });
             break;
           case "igCard":
             openIgCardPlaceholder(name);
@@ -126,6 +124,9 @@ export default function App() {
       </div>
       <div style={{ position: "fixed", left: "50%", top: 16, transform: "translateX(-50%)", zIndex: 1 }}>
         <Tour onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
+      </div>
+      <div style={{ position: "fixed", left: 16, top: 16, zIndex: 1 }}>
+        <Quiz click={quizClick} onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
       </div>
     </div>
   );
