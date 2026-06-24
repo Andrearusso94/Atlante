@@ -58,6 +58,15 @@ export default function Lesson() {
   const questions = currentSpec?.teaching?.questions ?? [];
   const entry = openEventIndex != null ? timeline[openEventIndex] : undefined;
 
+  // v12 (openModal/closeModal, righe 547-548): stessa gestione della classe sul body di
+  // IgCard.tsx per `body.modal-open` — letta da styles/global.css (#scene) e
+  // App.module.css (pannelli), che attenuano/sfocano lo sfondo a modale aperta.
+  useEffect(() => {
+    if (!modalOpen) return;
+    document.body.classList.add("modal-open");
+    return () => document.body.classList.remove("modal-open");
+  }, [modalOpen]);
+
   useEffect(() => {
     if (!modalOpen) return;
     function onKeyDown(e: KeyboardEvent) {

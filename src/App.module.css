@@ -77,3 +77,24 @@
   align-items: flex-start;
   gap: 10px;
 }
+
+/* v12 righe 65-67: a modale aperta (lezione o card IG, body.modal-open) i pannelli
+   intorno al globo si attenuano e smettono di reagire al puntatore — stesso bersaglio
+   del v12 (#head,#ctrlR,#lesson,#timeline,#aiBar); bottomStack sostituisce la coppia
+   #timeline/#aiBar (vedi commento in testa al file). Il blur/scale del globo stesso
+   vive su #scene in styles/global.css (id reale, non un modulo). */
+.head,
+.ctrlR,
+.lesson,
+.bottomStack {
+  transition: opacity 0.4s ease, filter 0.5s ease;
+}
+
+:global(body.modal-open) .head,
+:global(body.modal-open) .ctrlR,
+:global(body.modal-open) .lesson,
+:global(body.modal-open) .bottomStack {
+  opacity: 0.25;
+  filter: blur(2px);
+  pointer-events: none;
+}

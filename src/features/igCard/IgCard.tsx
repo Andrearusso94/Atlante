@@ -50,9 +50,8 @@ export default function IgCard({ open }: IgCardProps) {
   }
 
   // v12 (`igOverlay.classList.add("on");document.body.classList.add("modal-open")`):
-  // stessa gestione della classe sul body, anche se qui non esiste (ancora) un CSS
-  // globale che la legga — la teniamo per fedeltà e per non bloccare uno scroll/focus
-  // della pagina dietro la card.
+  // stessa gestione della classe sul body — letta da styles/global.css (#scene) e
+  // App.module.css (pannelli), che attenuano/sfocano lo sfondo a modale aperta.
   useEffect(() => {
     if (!visible) return;
     document.body.classList.add("modal-open");
