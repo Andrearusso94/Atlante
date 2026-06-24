@@ -53,9 +53,15 @@ items per archetype:
 - territory: NIENTE items e NIENTE poligoni. Dai invece "subject":str e "aliases":[str] = i nomi con cui l'entita compare nelle varie epoche storiche (es. Roma: ["Rome","Roman Republic","Roman Empire"], in inglese perche il dataset e in inglese). I confini reali vengono caricati da un dataset esterno.
 Regole: scegli l'archetipo piu adatto (espansioni/imperi/stati=territory). Per territory yearStart/yearEnd = arco dell'espansione. Italiano per i testi, inglese per gli aliases. Max 6 items, timeline max 6, keyPoints max 4, questions max 3. Conciso.`;
 
-const SYS_LEZIONE = `Sei uno storico che prepara lezioni accurate per la scuola. Rispondi SOLO con JSON valido, in italiano, niente markdown. Schema:
+const SYS_LEZIONE = `Sei uno storico che prepara lezioni accurate per la scuola. Puoi usare la ricerca web per verificare i fatti. Schema della risposta:
 {"context":str,"what":str,"causes":[str],"consequences":[str],"quote":str,"classroom":[str]}
-context: 2-3 frasi che inquadrano il periodo. what: 3-4 frasi su cosa accadde davvero. causes/consequences: 2-3 voci ciascuna. quote: una citazione o un dato significativo e verificabile (anche parafrasato). classroom: 2 spunti di riflessione per gli studenti. Conciso ma sostanzioso.`;
+context: 2-3 frasi che inquadrano il periodo. what: 3-4 frasi su cosa accadde davvero. causes/consequences: 2-3 voci ciascuna. quote: una citazione o un dato significativo e verificabile (anche parafrasato). classroom: 2 spunti di riflessione per gli studenti. Conciso ma sostanzioso, in italiano.
+FORMATO DELLA RISPOSTA FINALE — regole obbligatorie, anche dopo aver usato la ricerca web:
+1. L'intera risposta finale e ESCLUSIVAMENTE l'oggetto JSON: inizia con "{" e finisce con "}", nessun carattere prima o dopo.
+2. Niente prefazioni ("Ecco la lezione:", "In base alla ricerca..."), niente commenti, niente testo dopo l'oggetto.
+3. Niente markdown: niente \`\`\`json, niente \`\`\`, niente titoli o elenchi fuori dal JSON.
+4. Niente citazioni o riferimenti alle fonti dentro i valori delle stringhe (no "[1]", no "(fonte: ...)", no link): scrivi le informazioni in prosa normale, senza marcatori di citazione.
+5. I risultati della ricerca web servono solo a te per verificare i fatti: non riportarli, non riassumerli, non menzionarli nella risposta — restituisci soltanto l'oggetto JSON finale.`;
 
 // --- entry point ---
 
@@ -183,12 +189,49 @@ function extractText(data: any): string {
 }
 
 function parseModelJson(txt: string): unknown {
-  const clean = (txt || "").replace(/```json|```/g, "").trim();
+  const raw = (txt || "").trim();
   try {
-    return JSON.parse(clean);
+    return JSON.parse(raw);
   } catch {
-    throw fail(502, "bad_model_json", "L'IA non ha restituito JSON valido.");
+    // ripiego sotto: risposta "quasi pulita" (fence ```json, prefazioni o citazioni
+    // intorno al JSON — tipico quando il modello usa web_search) prima di arrendersi.
   }
+  const extracted = extractBalancedJson(raw);
+  if (extracted) {
+    try {
+      return JSON.parse(extracted);
+    } catch {
+      // nessun recupero possibile: cade nel 502 sotto
+    }
+  }
+  throw fail(502, "bad_model_json", "L'IA non ha restituito JSON valido.");
+}
+
+// Ritaglia dalla prima "{" alla sua "}" di chiusura corrispondente, contando le
+// parentesi e ignorando quelle dentro le stringhe — così non si confonde con testo,
+// citazioni o fence ```json prima/dopo il vero oggetto JSON.
+function extractBalancedJson(txt: string): string | null {
+  const start = txt.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < txt.length; i++) {
+    const ch = txt[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return txt.slice(start, i + 1);
+    }
+  }
+  return null;
 }
 
 async function rateLimited(env: Env, ip: string): Promise<boolean> {
