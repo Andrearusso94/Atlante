@@ -1,0 +1,82 @@
+/* Posizioni fixed reali del v12 per i contenitori composti in App.tsx (il "dove" sullo
+   schermo): l'aspetto vetro/tipografia vive nei CSS module di ogni feature (il "cosa").
+   `chrome` compone la regola :global(body.present) del blocco 18 (features/present/) —
+   non duplicarla qui. */
+
+.head {
+  composes: glass from global;
+  composes: chrome from "./features/present/Present.module.css";
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 10;
+  padding: 16px 20px;
+  max-width: 300px;
+}
+
+/* v12 #ctrlR: solo un contenitore flex — il vetro sta sui suoi figli (Controls.module.css). */
+.ctrlR {
+  composes: chrome from "./features/present/Present.module.css";
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 13;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.lesson {
+  composes: chrome from "./features/present/Present.module.css";
+  position: fixed;
+  top: 150px;
+  right: 18px;
+  bottom: 200px;
+  width: 330px;
+  max-width: 86vw;
+  z-index: 10;
+}
+
+.aiBar {
+  composes: chrome from "./features/present/Present.module.css";
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+}
+
+.timeline {
+  position: fixed;
+  bottom: 122px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+}
+
+/* v12 #toolBox (left:18,top:50%): qui solo il bottone Presentazione — Tour/Quiz hanno
+   una propria posizione reale (#tourBar/#quizBar) e restano dove sono già. */
+.present {
+  position: fixed;
+  top: 50%;
+  left: 18px;
+  transform: translateY(-50%);
+  z-index: 13;
+}
+
+.tour {
+  position: fixed;
+  bottom: 190px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+}
+
+.quiz {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 14;
+}

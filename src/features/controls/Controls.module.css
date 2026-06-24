@@ -1,54 +1,63 @@
-/* Minimale e funzionale — lo stile vero arriva nel blocco CSS dedicato. */
+/* v12 #themeBox/#bordersBox/.swt (righe 22-32): vetro + palette reali al posto del
+   segnaposto minimale. */
 
 .panel {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 8px;
 }
 
 .themeBox {
+  composes: glass from global;
   display: flex;
   gap: 3px;
   padding: 7px;
-  border-radius: 10px;
-  background: rgba(20, 20, 24, 0.7);
 }
 
 .themeButton {
   background: transparent;
-  color: #9a9384;
+  color: var(--dim);
   border: none;
   padding: 7px 12px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 11.5px;
+  font: inherit;
   cursor: pointer;
+  transition: all 0.18s;
 }
 
 .themeButton[aria-pressed="true"] {
   background: rgba(227, 172, 70, 0.16);
-  color: #e3ac46;
+  color: var(--gold-2);
 }
 
 .bordersToggle {
+  composes: glass from global;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   padding: 9px 12px;
-  border-radius: 10px;
-  background: rgba(20, 20, 24, 0.7);
+  max-width: 240px;
   border: none;
-  color: #f0ebde;
+  color: var(--dim);
+  font: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 
+.bordersToggle[aria-pressed="true"] {
+  color: var(--gold-2);
+}
+
 .switch {
-  width: 28px;
-  height: 16px;
+  width: 34px;
+  height: 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.14);
   position: relative;
+  transition: background 0.2s;
+  flex: 0 0 auto;
 }
 
 .switch::after {
@@ -56,18 +65,18 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #cfc9b8;
-  transition: transform 0.15s ease;
+  background: var(--dim);
+  transition: all 0.2s;
 }
 
 .bordersToggle[aria-pressed="true"] .switch {
-  background: rgba(227, 172, 70, 0.4);
+  background: rgba(227, 172, 70, 0.5);
 }
 
 .bordersToggle[aria-pressed="true"] .switch::after {
-  transform: translateX(12px);
-  background: #e3ac46;
+  left: 18px;
+  background: var(--gold);
 }

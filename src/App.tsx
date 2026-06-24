@@ -14,7 +14,7 @@ import Tour from "./features/tour/Tour";
 import Quiz, { type QuizClick } from "./features/quiz/Quiz";
 import IgCard, { type IgCardOpen } from "./features/igCard/IgCard";
 import Present from "./features/present/Present";
-import presentStyles from "./features/present/Present.module.css";
+import styles from "./App.module.css";
 
 // Cablaggio centrale store Redux <-> GlobeEngine (blocco 10). Vive in App.tsx perché il
 // coordinatore del click sul globo deve conoscere insieme lo stato di più feature
@@ -109,56 +109,38 @@ export default function App() {
 
   return (
     <div>
-      <div ref={containerRef} style={{ position: "fixed", inset: 0 }} />
-      <div
-        className={presentStyles.chrome}
-        style={{ position: "relative", zIndex: 1, color: "#fff", padding: 16 }}
-      >
-        <h1>Atlante Sincronico</h1>
-        <p>Scaffold pronto — tema corrente: {theme}</p>
+      <div ref={containerRef} id="scene" role="application" aria-label="Globo 3D" />
+      <div className={styles.head}>
+        <p className="eyebrow">Atlante Sincronico · IA</p>
+        <h1>Scrivi la storia, guardala</h1>
+        <p className="sub">Scaffold pronto — tema corrente: {theme}</p>
       </div>
-      <div className={presentStyles.chrome} style={{ position: "fixed", left: 16, bottom: 16, zIndex: 1 }}>
+      <div className={styles.aiBar}>
         <Generator />
       </div>
-      <div className={presentStyles.chrome} style={{ position: "fixed", right: 16, bottom: 16, zIndex: 1 }}>
+      <div className={styles.lesson}>
         <Lesson />
       </div>
-      <div className={presentStyles.chrome} style={{ position: "fixed", right: 16, top: 16, zIndex: 1 }}>
+      <div className={styles.ctrlR}>
         <Controls />
       </div>
-      <div style={{ position: "fixed", left: 16, top: 70, zIndex: 1 }}>
+      <div className={styles.present}>
         <Present />
       </div>
-      <div
-        style={{
-          position: "fixed",
-          left: "50%",
-          bottom: 16,
-          transform: "translateX(-50%)",
-          zIndex: 1,
-        }}
-      >
+      <div className={styles.timeline}>
         <Timeline
           tick={tick}
           onSetPlaying={(on) => engineRef.current?.setPlaying(on)}
           onSetProgress={(p) => engineRef.current?.setProgress(p)}
         />
       </div>
-      <div
-        style={{
-          position: "fixed",
-          left: "50%",
-          top: 16,
-          transform: "translateX(-50%)",
-          zIndex: 1,
-        }}
-      >
+      <div className={styles.tour}>
         <Tour
           onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)}
           onOpenIgCard={openIgCard}
         />
       </div>
-      <div style={{ position: "fixed", left: 16, top: 16, zIndex: 1 }}>
+      <div className={styles.quiz}>
         <Quiz click={quizClick} onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
       </div>
       <IgCard open={igCardOpen} />

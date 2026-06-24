@@ -1,39 +1,38 @@
-/* Minimale e funzionale — lo stile vero arriva nel blocco CSS dedicato. */
+/* v12 .tool-b/#tourBar/.tour-nav/.tour-label/.tour-step/.tour-x (righe 150-167): vetro +
+   palette + tipografia reali al posto del segnaposto minimale. */
 
 .launch {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   background: rgba(255, 255, 255, 0.05);
-  color: #eef1f6;
-  border: 1px solid rgba(120, 150, 200, 0.18);
+  color: var(--paper);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 9px 14px;
   font-size: 12.5px;
   cursor: pointer;
+  transition: all 0.15s;
 }
 
 .launch:hover {
-  border-color: #e3ac46;
-  color: #f3d28f;
+  border-color: var(--gold);
+  color: var(--gold-2);
   background: rgba(227, 172, 70, 0.08);
 }
 
 .bar {
+  composes: glass from global;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: rgba(15, 22, 38, 0.66);
-  border: 1px solid rgba(120, 150, 200, 0.18);
-  border-radius: 16px;
-  backdrop-filter: blur(14px) saturate(120%);
 }
 
 .nav {
   background: rgba(255, 255, 255, 0.08);
-  color: #eef1f6;
-  border: 1px solid rgba(120, 150, 200, 0.18);
+  color: var(--paper);
+  border: 1px solid var(--border);
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -42,11 +41,12 @@
   flex: 0 0 auto;
   display: grid;
   place-items: center;
+  transition: all 0.15s;
 }
 
 .nav:hover {
-  border-color: #e3ac46;
-  color: #f3d28f;
+  border-color: var(--gold);
+  color: var(--gold-2);
   background: rgba(227, 172, 70, 0.14);
 }
 
@@ -56,8 +56,9 @@
 }
 
 .label {
+  font-family: "Fraunces", serif;
   font-size: 15px;
-  color: #f3d28f;
+  color: var(--gold-2);
   line-height: 1.1;
 }
 
@@ -69,7 +70,7 @@
 
 .step {
   font-size: 10px;
-  color: #9aa6bd;
+  color: var(--dim);
   letter-spacing: 0.04em;
   margin-top: 2px;
 }
@@ -77,7 +78,7 @@
 .exit {
   background: transparent;
   border: none;
-  color: #9aa6bd;
+  color: var(--dim);
   cursor: pointer;
   font-size: 14px;
   padding: 4px 6px;
@@ -85,5 +86,5 @@
 }
 
 .exit:hover {
-  color: #eef1f6;
+  color: var(--paper);
 }

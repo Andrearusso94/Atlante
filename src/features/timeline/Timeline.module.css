@@ -1,6 +1,8 @@
-/* Minimale e funzionale — lo stile vero arriva nel blocco CSS dedicato. */
+/* v12 #timeline/#play/#scrub/#curYear (righe 43-49): vetro + palette + tipografia reali
+   al posto del segnaposto minimale. */
 
 .bar {
+  composes: glass from global;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -8,8 +10,7 @@
   max-width: 94vw;
   padding: 10px 16px;
   border-radius: 999px;
-  background: rgba(20, 20, 24, 0.7);
-  color: #f0ebde;
+  color: var(--paper);
 }
 
 .play {
@@ -18,25 +19,49 @@
   height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
+  border: 1px solid var(--border);
+  color: var(--paper);
   font-size: 14px;
   cursor: pointer;
 }
 
 .scrub {
+  -webkit-appearance: none;
+  appearance: none;
   flex: 1;
   height: 3px;
   border-radius: 3px;
-  accent-color: #e3ac46;
+  background: rgba(255, 255, 255, 0.16);
+  outline: none;
+}
+
+.scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid var(--space);
+  box-shadow: 0 0 0 1px var(--gold);
+  cursor: pointer;
+}
+
+.scrub::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid var(--space);
+  cursor: pointer;
 }
 
 .year {
   flex: 0 0 auto;
   min-width: 96px;
   text-align: right;
-  font-size: 18px;
-  color: #e3ac46;
+  font-family: "Fraunces", serif;
+  font-size: 22px;
+  color: var(--gold);
 }
 
 /* v12 riga 200 (body.present #curYear): anno ingrandito per la proiezione in aula

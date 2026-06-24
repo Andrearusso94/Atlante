@@ -3,25 +3,26 @@
 .toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   background: rgba(255, 255, 255, 0.05);
-  color: #eef1f6;
-  border: 1px solid rgba(120, 150, 200, 0.18);
+  color: var(--paper);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 9px 14px;
   font-size: 12.5px;
   cursor: pointer;
+  transition: all 0.15s;
 }
 
 .toggle:hover {
-  border-color: #e3ac46;
-  color: #f3d28f;
+  border-color: var(--gold);
+  color: var(--gold-2);
   background: rgba(227, 172, 70, 0.08);
 }
 
 .toggle[aria-pressed="true"] {
-  border-color: #e3ac46;
-  color: #f3d28f;
+  border-color: var(--gold);
+  color: var(--gold-2);
   background: rgba(227, 172, 70, 0.16);
 }
 

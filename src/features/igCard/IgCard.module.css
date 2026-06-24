@@ -1,7 +1,5 @@
 /* Carosello "Instagram" Peste — porta lo stile vero dal v12 (sezione "CARD RULLINO
-   PESTE NERA"): è uno dei pochi componenti dove vale la pena farlo subito, la card è
-   molto visiva. Colori identici alla palette già in uso in Tour.module.css/Quiz.module.css
-   (stessi valori delle costanti P_* in engine/plates.ts). */
+   PESTE NERA", righe 99-145): vetro + palette + tipografia reali. */
 
 .overlay {
   position: fixed;
@@ -16,6 +14,7 @@
 }
 
 .card {
+  composes: glass from global;
   width: 384px;
   max-width: 93vw;
   max-height: 93vh;
@@ -23,10 +22,6 @@
   flex-direction: column;
   border-radius: 20px;
   overflow: hidden;
-  background: rgba(15, 22, 38, 0.66);
-  border: 1px solid rgba(120, 150, 200, 0.18);
-  backdrop-filter: blur(14px) saturate(120%);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
 }
 
 @media (max-width: 760px) {
@@ -40,7 +35,7 @@
   align-items: center;
   gap: 11px;
   padding: 13px 14px 12px;
-  border-bottom: 1px solid rgba(120, 150, 200, 0.18);
+  border-bottom: 1px solid var(--border);
 }
 
 .avatar {
@@ -51,7 +46,7 @@
   display: grid;
   place-items: center;
   background: radial-gradient(circle at 35% 28%, rgba(243, 210, 143, 0.22), rgba(15, 22, 38, 0.9));
-  border: 1.5px solid #e3ac46;
+  border: 1.5px solid var(--gold);
   box-shadow: 0 0 0 2px rgba(227, 172, 70, 0.12);
 }
 
@@ -66,15 +61,16 @@
 }
 
 .name {
+  font-family: "Fraunces", serif;
   font-size: 15.5px;
   font-weight: 600;
   line-height: 1.1;
-  color: #eef1f6;
+  color: var(--paper);
 }
 
 .sub {
   font-size: 10.5px;
-  color: #6fd3e0;
+  color: var(--cyan);
   letter-spacing: 0.05em;
   margin-top: 3px;
   display: flex;
@@ -91,8 +87,8 @@
 .close {
   flex: 0 0 auto;
   background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(120, 150, 200, 0.18);
-  color: #eef1f6;
+  border: 1px solid var(--border);
+  color: var(--paper);
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -104,7 +100,7 @@
 .stage {
   position: relative;
   aspect-ratio: 4 / 5;
-  background: #05080f;
+  background: var(--space);
   overflow: hidden;
   touch-action: pan-y;
 }
@@ -146,7 +142,7 @@
 }
 
 .dotOn {
-  background: #e3ac46;
+  background: var(--gold);
   width: 18px;
   border-radius: 3px;
 }
@@ -160,8 +156,8 @@
   height: 34px;
   border-radius: 50%;
   background: rgba(5, 8, 15, 0.42);
-  border: 1px solid rgba(120, 150, 200, 0.18);
-  color: #eef1f6;
+  border: 1px solid var(--border);
+  color: var(--paper);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -173,7 +169,7 @@
 
 .nav:hover {
   background: rgba(227, 172, 70, 0.28);
-  border-color: #e3ac46;
+  border-color: var(--gold);
 }
 
 .prev {
@@ -205,8 +201,9 @@
 }
 
 .capt {
+  font-family: "Fraunces", serif;
   font-size: 16.5px;
-  color: #eef1f6;
+  color: var(--paper);
   line-height: 1.18;
 }
 
@@ -215,7 +212,7 @@
   align-items: center;
   gap: 15px;
   padding: 11px 14px 2px;
-  color: #eef1f6;
+  color: var(--paper);
 }
 
 .actions :global(svg) {
@@ -229,18 +226,18 @@
 
 .actions :global(svg:hover) {
   transform: scale(1.12);
-  color: #e3ac46;
+  color: var(--gold);
 }
 
 .actions :global(.heart.liked) {
-  color: #e3ac46;
-  fill: #e3ac46;
+  color: var(--gold);
+  fill: var(--gold);
 }
 
 .count {
   margin-left: auto;
   font-size: 11px;
-  color: #9aa6bd;
+  color: var(--dim);
   letter-spacing: 0.03em;
 }
 
@@ -252,18 +249,19 @@
 .text {
   font-size: 13.5px;
   line-height: 1.62;
-  color: #eef1f6;
+  color: var(--paper);
   margin: 0;
 }
 
 .text :global(b) {
-  color: #f3d28f;
+  color: var(--gold-2);
+  font-family: "Fraunces", serif;
   font-weight: 600;
 }
 
 .foot {
   font-size: 10.5px;
-  color: #f3d28f;
+  color: var(--gold-2);
   background: rgba(227, 172, 70, 0.1);
   border: 1px solid rgba(227, 172, 70, 0.22);
   border-radius: 9px;

@@ -1,0 +1,82 @@
+/* Identità visiva v12 (righe 11-21, 64-67): variabili palette, sfondo "spazio profondo",
+   .glass (vetro smerigliato — l'elemento visivo chiave dei pannelli) e le classi
+   tipografiche di supporto. I CSS module delle feature compongono `.glass` da qui
+   (composes: glass from global) invece di duplicarne le regole. */
+
+:root {
+  --space: #05080f;
+  --panel: rgba(15, 22, 38, 0.66);
+  --border: rgba(120, 150, 200, 0.18);
+  --gold: #e3ac46;
+  --gold-2: #f3d28f;
+  --cyan: #6fd3e0;
+  --paper: #eef1f6;
+  --dim: #9aa6bd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--space);
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  color: var(--paper);
+}
+
+#scene {
+  position: fixed;
+  inset: 0;
+  cursor: grab;
+}
+
+#scene:active {
+  cursor: grabbing;
+}
+
+#scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 42%, #0c1730 0%, #05080f 60%, #02040a 100%);
+}
+
+.glass {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin: 0 0 6px;
+}
+
+h1 {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 20px;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.sub {
+  font-size: 11.5px;
+  color: var(--dim);
+  margin: 7px 0 0;
+  line-height: 1.5;
+}
