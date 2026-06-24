@@ -137,13 +137,20 @@ async function handleLezione(request: Request, env: Env, ctx: ExecutionContext):
   const cached = await env.CACHE.get(key);
   if (cached) return okJson(cached, true);
 
-  const data = await callAnthropic(env, {
-    model: env.MODEL || DEFAULT_MODEL,
-    max_tokens: 1000,
-    system: SYS_LEZIONE,
-    messages: [{ role: "user", content: `Lezione su "${event}" (${fmtYear(year)}), nel contesto di "${title}". Genera la scheda JSON.` }],
-    tools: [{ type: "web_search_20250305", name: "web_search" }],
-  });
+  // web_search aggiunge un giro di ricerca prima della sintesi finale: può richiedere
+  // 25-30s, oltre il timeout di default di callAnthropic (45s va bene comunque, ma qui
+  // alziamo il tetto a LEZIONE_TIMEOUT_MS per avere margine reale).
+  const data = await callAnthropic(
+    env,
+    {
+      model: env.MODEL || DEFAULT_MODEL,
+      max_tokens: 1000,
+      system: SYS_LEZIONE,
+      messages: [{ role: "user", content: `Lezione su "${event}" (${fmtYear(year)}), nel contesto di "${title}". Genera la scheda JSON.` }],
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+    },
+    LEZIONE_TIMEOUT_MS,
+  );
 
   const card = parseModelJson(extractText(data));
   const out = JSON.stringify(card);
@@ -153,10 +160,20 @@ async function handleLezione(request: Request, env: Env, ctx: ExecutionContext):
 
 // --- chiamata ad Anthropic con timeout ---
 
-async function callAnthropic(env: Env, payload: Record<string, unknown>): Promise<any> {
+const GENERA_TIMEOUT_MS = 45_000;
+// /api/lezione usa web_search (ricerca + sintesi finale): può legittimamente richiedere
+// 25-30s, quindi le serve un tetto più alto di quello di /api/genera (che non lo usa).
+const LEZIONE_TIMEOUT_MS = 60_000;
+
+// Stati HTTP che indicano un timeout lato Anthropic/rete (non un errore "di contenuto"):
+// 408 Request Timeout, 504 Gateway Timeout, 522/523/524 della famiglia "timeout" di
+// Cloudflare quando un proxy davanti ad Anthropic non riceve risposta in tempo.
+const UPSTREAM_TIMEOUT_STATUSES = new Set([408, 504, 522, 523, 524]);
+
+async function callAnthropic(env: Env, payload: Record<string, unknown>, timeoutMs = GENERA_TIMEOUT_MS): Promise<any> {
   if (!env.ANTHROPIC_API_KEY) throw fail(500, "no_key", "Chiave API non configurata sul server.");
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 45000);
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -171,6 +188,9 @@ async function callAnthropic(env: Env, payload: Record<string, unknown>): Promis
     if (!res.ok) {
       // Non inoltrare corpi d'errore grezzi al client; logga solo lo stato.
       console.log("anthropic_error", res.status);
+      if (UPSTREAM_TIMEOUT_STATUSES.has(res.status)) {
+        throw fail(504, "upstream_timeout", "L'IA non ha risposto in tempo.");
+      }
       throw fail(502, "upstream_error", "L'IA ha risposto con un errore.");
     }
     return await res.json();

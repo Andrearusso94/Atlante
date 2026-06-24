@@ -104,4 +104,10 @@ describe("postApi — problemi di trasporto", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
     await expect(postApi("/api/genera", {})).rejects.toBeInstanceOf(ApiError);
   });
+
+  it("se il timeout lato client scatta (AbortSignal.timeout), produce upstream_timeout e non network_error", async () => {
+    const timeoutErr = Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeoutErr));
+    await expect(postApi("/api/lezione", {})).rejects.toMatchObject({ code: "upstream_timeout", status: 0 });
+  });
 });

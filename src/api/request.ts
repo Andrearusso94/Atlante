@@ -25,6 +25,17 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
 }
 
+// Tetto lato client, sopra il timeout più alto lato Worker (/api/lezione, web_search:
+// 60s, vedi worker/index.ts LEZIONE_TIMEOUT_MS) con margine per il giro di rete — così
+// è il Worker a classificare l'errore (504 upstream_timeout vs 502 upstream_error) prima
+// che il client rinunci da solo. /api/genera (che risponde in centesimi di secondo) non
+// ne è toccato.
+const CLIENT_TIMEOUT_MS = 70_000;
+
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
+}
+
 async function readJsonSafe(res: Response): Promise<unknown> {
   try {
     return await res.json();
@@ -49,8 +60,10 @@ export async function postApi(path: string, body: unknown): Promise<unknown> {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS),
     });
-  } catch {
+  } catch (err) {
+    if (isAbortError(err)) throw new ApiError("upstream_timeout", 0, "L'IA non ha risposto in tempo.");
     throw new ApiError("network_error", 0, "Rete assente o server non raggiungibile.");
   }
 
