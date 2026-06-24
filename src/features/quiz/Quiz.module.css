@@ -91,3 +91,18 @@
   font-weight: 500;
   color: #e8896f;
 }
+
+/* v12 righe 196-198 (body.present #quizBar/.quiz-q/.quiz-fx): barra e testi ingranditi
+   per la proiezione in aula (features/present/). */
+:global(body.present) .bar {
+  max-width: 560px;
+}
+
+:global(body.present) .question {
+  font-size: 19px;
+}
+
+:global(body.present) .fxGood,
+:global(body.present) .fxBad {
+  font-size: 14.5px;
+}

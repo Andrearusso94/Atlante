@@ -13,6 +13,8 @@ import Timeline from "./features/timeline/Timeline";
 import Tour from "./features/tour/Tour";
 import Quiz, { type QuizClick } from "./features/quiz/Quiz";
 import IgCard, { type IgCardOpen } from "./features/igCard/IgCard";
+import Present from "./features/present/Present";
+import presentStyles from "./features/present/Present.module.css";
 
 // Cablaggio centrale store Redux <-> GlobeEngine (blocco 10). Vive in App.tsx perché il
 // coordinatore del click sul globo deve conoscere insieme lo stato di più feature
@@ -108,18 +110,24 @@ export default function App() {
   return (
     <div>
       <div ref={containerRef} style={{ position: "fixed", inset: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, color: "#fff", padding: 16 }}>
+      <div
+        className={presentStyles.chrome}
+        style={{ position: "relative", zIndex: 1, color: "#fff", padding: 16 }}
+      >
         <h1>Atlante Sincronico</h1>
         <p>Scaffold pronto — tema corrente: {theme}</p>
       </div>
-      <div style={{ position: "fixed", left: 16, bottom: 16, zIndex: 1 }}>
+      <div className={presentStyles.chrome} style={{ position: "fixed", left: 16, bottom: 16, zIndex: 1 }}>
         <Generator />
       </div>
-      <div style={{ position: "fixed", right: 16, bottom: 16, zIndex: 1 }}>
+      <div className={presentStyles.chrome} style={{ position: "fixed", right: 16, bottom: 16, zIndex: 1 }}>
         <Lesson />
       </div>
-      <div style={{ position: "fixed", right: 16, top: 16, zIndex: 1 }}>
+      <div className={presentStyles.chrome} style={{ position: "fixed", right: 16, top: 16, zIndex: 1 }}>
         <Controls />
+      </div>
+      <div style={{ position: "fixed", left: 16, top: 70, zIndex: 1 }}>
+        <Present />
       </div>
       <div
         style={{

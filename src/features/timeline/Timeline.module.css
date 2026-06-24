@@ -38,3 +38,9 @@
   font-size: 18px;
   color: #e3ac46;
 }
+
+/* v12 riga 200 (body.present #curYear): anno ingrandito per la proiezione in aula
+   (features/present/). */
+:global(body.present) .year {
+  font-size: 26px;
+}

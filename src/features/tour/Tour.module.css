@@ -61,6 +61,12 @@
   line-height: 1.1;
 }
 
+/* v12 riga 199 (body.present .tour-label): etichetta tappa ingrandita per la
+   proiezione in aula (features/present/). */
+:global(body.present) .label {
+  font-size: 17px;
+}
+
 .step {
   font-size: 10px;
   color: #9aa6bd;

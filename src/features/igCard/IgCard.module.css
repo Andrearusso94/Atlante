@@ -271,3 +271,26 @@
   margin-top: 14px;
   line-height: 1.45;
 }
+
+/* v12 righe 191-195 (body.present #igCard/.ig-name/.ig-capt/.ig-text/.ig-foot): card più
+   grande e testi ingranditi per la proiezione in aula (features/present/). */
+:global(body.present) .card {
+  width: 460px;
+}
+
+:global(body.present) .name {
+  font-size: 18px;
+}
+
+:global(body.present) .capt {
+  font-size: 19px;
+}
+
+:global(body.present) .text {
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+
+:global(body.present) .foot {
+  font-size: 11.5px;
+}

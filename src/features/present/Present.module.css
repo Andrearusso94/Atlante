@@ -1,0 +1,38 @@
+/* Minimale e funzionale, stessa palette di features/tour/Tour.module.css. */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eef1f6;
+  border: 1px solid rgba(120, 150, 200, 0.18);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  border-color: #e3ac46;
+  color: #f3d28f;
+  background: rgba(227, 172, 70, 0.08);
+}
+
+.toggle[aria-pressed="true"] {
+  border-color: #e3ac46;
+  color: #f3d28f;
+  background: rgba(227, 172, 70, 0.16);
+}
+
+/* v12 righe 187-188: in presentazione, nasconde l'interfaccia di editing (header,
+   controlli, pannello lezione, barra generatore IA) — App.tsx applica questa classe ai
+   loro contenitori. Il bottone qui sopra resta sempre visibile: serve per uscire. */
+.chrome {
+  transition: opacity 0.4s;
+}
+
+:global(body.present) .chrome {
+  opacity: 0;
+  pointer-events: none;
+}
