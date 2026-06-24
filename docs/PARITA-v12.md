@@ -143,12 +143,15 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 | 1070 | vista d'insieme `flyTo(54,10)` all'avvio | `OVERVIEW=[54,10]` in `quizLogic.ts` | ✓ identica |
 | 169-184, 306-316 | CSS `#quizBar`/`.quiz-*` (colori, dimensioni) | `Quiz.module.css` | ✓ 1:1 (manca solo il posizionamento, vedi ✗5) |
 
+**✓ corretto (fuori tranche, correzione isolata):**
+
+4. ~~Punteggio/posizione avanzano troppo presto.~~ v12 incrementa `quizPos` solo *dopo* i 1650ms di feedback, dentro il `setTimeout` di `quizAnswer` (righe 1080-1083) — punteggio e feedback restano invece immediati (righe 1075-1079). `modeSlice.answerQuiz` è stato diviso in due reducer: `answerQuiz` aggiorna solo `quizScore` (immediato, come nel v12), il nuovo `advanceQuiz` aggiorna solo `quizPos` ed è dispatchato in `Quiz.tsx` dentro il `setTimeout` di `FEEDBACK_MS`, non più insieme al click. Durante la finestra di feedback la domanda a video resta quella appena risposta, non la successiva. Test aggiornati in `modeSlice.test.ts` e `Quiz.test.tsx` per coprire esplicitamente il nuovo timing.
+
 **✗ mancante:**
 
 1. **`ensurePlagueReady` non è mai stata implementata** — stesso gap esatto del Tour (Blocco 5 ✗1): `Quiz.tsx handleStart` accende solo `bordersOn`/`plagueActive`, non carica mai `FALLBACK.peste` né forza l'anno 1349.
 2. **Nessuna esclusione reciproca col Tour.** v12 `startQuiz`: `if(tourActive)endTour();` (riga 1064). `Quiz.tsx handleStart` non dispatcha mai `endTour()`.
 3. **Esc non chiude il quiz** — stesso gap del Tour (terza catena Esc, riga 1102: `if(quizActive||quizBar.classList.contains("on")){quizExit();return;}`).
-4. **Punteggio/posizione avanzano troppo presto.** v12 incrementa `quizPos` solo *dopo* i 1650ms di feedback, dentro il `setTimeout` di `quizAnswer` (righe 1080-1083). `modeSlice.answerQuiz` invece viene dispatchato subito in `Quiz.tsx` (appena si risponde): per tutta la finestra di feedback lo schermo mostrerebbe già la domanda *successiva* (testo + "Domanda N/9") sovrapposta al messaggio di feedback ("✓ Esatto — …") della domanda *precedente*, invece di restare sulla domanda appena risposta come nel v12.
 5. **Posizione della barra attiva sbagliata** — stesso problema del Tour (Blocco 5 ✗5): `Quiz.module.css .bar` non ha `position:fixed;top:18px;left:50%` (v12 riga 170).
 6. **Testo "Preparo la mappa…" assente** — conseguenza diretta del punto 1: non c'è alcun caricamento asincrono da segnalare finché `ensurePlagueReady` non esiste.
 

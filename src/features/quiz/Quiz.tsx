@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
+  advanceQuiz,
   answerQuiz,
   endQuiz,
   selectBordersOn,
@@ -91,9 +92,13 @@ export default function Quiz({ onFlyTo, click }: QuizProps) {
     dispatch(endQuiz());
   }
 
-  // v12 (quizAnswer): confronta la regione cliccata con la risposta attesa, aggiorna
-  // punteggio/posizione e mostra il feedback per FEEDBACK_MS; se era l'ultima domanda,
-  // esce da sola come in fondo al Tour. Il timer vive in feedbackTimerRef, non nel
+  // v12 (quizAnswer, righe 1072-1083): confronta la regione cliccata con la risposta
+  // attesa, aggiorna SUBITO il punteggio e mostra il feedback; l'avanzamento alla
+  // domanda successiva (`advanceQuiz`) arriva solo allo scadere di FEEDBACK_MS, dentro
+  // il setTimeout — durante la finestra di lock la domanda a video resta quella appena
+  // risposta, non la successiva (prima del fix qui, `quizPos` avanzava insieme al
+  // feedback). Se era l'ultima domanda, esce da sola come in fondo al Tour. Il timer
+  // vive in feedbackTimerRef, non nel
   // cleanup di questo effetto: un tap arrivato (e ignorato) durante il lock cambia
   // comunque `click` e farebbe scattare il cleanup, cancellando il timer appena creato
   // prima ancora che scada — esattamente il tap che il lock dovrebbe lasciare senza
@@ -124,6 +129,7 @@ export default function Quiz({ onFlyTo, click }: QuizProps) {
       feedbackTimerRef.current = null;
       lockRef.current = false;
       setFeedback(null);
+      dispatch(advanceQuiz());
       if (wasLast) handleExit();
     }, FEEDBACK_MS);
   }, [click]);

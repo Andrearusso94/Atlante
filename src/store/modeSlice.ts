@@ -72,8 +72,13 @@ const modeSlice = createSlice({
     endQuiz(state) {
       state.quizActive = false;
     },
+    // v12 (quizAnswer, righe 1072-1083): punteggio e feedback sono immediati; solo dopo
+    // i FEEDBACK_MS del setTimeout si avanza alla domanda successiva (quizPos++) — due
+    // reducer separati per riflettere la stessa scaletta (dispatch in Quiz.tsx).
     answerQuiz(state, action: PayloadAction<{ correct: boolean }>) {
       if (action.payload.correct) state.quizScore += 1;
+    },
+    advanceQuiz(state) {
       state.quizPos += 1;
     },
     setPresent(state, action: PayloadAction<boolean>) {
@@ -102,6 +107,7 @@ export const {
   startQuiz,
   endQuiz,
   answerQuiz,
+  advanceQuiz,
   setPresent,
   setPlagueActive,
   setBordersOn,

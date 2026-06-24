@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import modeReducer, {
+  advanceQuiz,
   answerQuiz,
   endQuiz,
   endTour,
@@ -59,11 +60,16 @@ describe("modeSlice reducers", () => {
     expect(state).toMatchObject({ quizActive: true, quizScore: 0, quizPos: 0, quizOrder: [2, 0, 1] });
   });
 
-  it("answerQuiz incrementa lo score solo se corretto, e sempre la posizione", () => {
+  it("answerQuiz incrementa lo score solo se corretto, e non tocca la posizione (v12: punteggio immediato, avanzamento dopo FEEDBACK_MS)", () => {
     const afterCorrect = modeReducer(undefined, answerQuiz({ correct: true }));
-    expect(afterCorrect).toMatchObject({ quizScore: 1, quizPos: 1 });
+    expect(afterCorrect).toMatchObject({ quizScore: 1, quizPos: 0 });
     const afterWrong = modeReducer(afterCorrect, answerQuiz({ correct: false }));
-    expect(afterWrong).toMatchObject({ quizScore: 1, quizPos: 2 });
+    expect(afterWrong).toMatchObject({ quizScore: 1, quizPos: 0 });
+  });
+
+  it("advanceQuiz incrementa solo la posizione, mai il punteggio", () => {
+    const state = modeReducer(undefined, advanceQuiz());
+    expect(state).toMatchObject({ quizScore: 0, quizPos: 1 });
   });
 
   it("endQuiz disattiva il quiz", () => {

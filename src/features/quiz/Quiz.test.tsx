@@ -75,7 +75,7 @@ describe("Quiz", () => {
     screen.getByText(`Domanda 1 / ${QUIZ.length}`, { exact: false });
   });
 
-  it("risposta corretta: somma il punteggio, mostra il feedback positivo e vola sulla regione", () => {
+  it("risposta corretta: somma SUBITO il punteggio, mostra il feedback positivo e vola sulla regione — la posizione non avanza ancora", () => {
     const { store, onFlyTo, setClick } = renderQuiz();
     fireEvent.click(screen.getByText("❓ Quiz"));
     const target = currentTarget(store);
@@ -84,12 +84,15 @@ describe("Quiz", () => {
 
     setClick({ name: target, seq: 1 });
 
-    expect(store.getState().mode).toMatchObject({ quizScore: 1, quizPos: 1 });
+    // v12 (quizAnswer, righe 1072-1083): punteggio e feedback immediati, ma `quizPos`
+    // avanza solo dopo FEEDBACK_MS — durante il feedback si resta sulla stessa domanda.
+    expect(store.getState().mode).toMatchObject({ quizScore: 1, quizPos: 0 });
     screen.getByText(`✓ Esatto — ${targetDef.label}`);
+    screen.getByText(`Domanda 1 / ${QUIZ.length}`, { exact: false });
     expect(onFlyTo).toHaveBeenCalledWith(targetDef.ll[0], targetDef.ll[1]);
   });
 
-  it("risposta sbagliata: non somma il punteggio ma avanza comunque, e mostra il feedback negativo", () => {
+  it("risposta sbagliata: non somma il punteggio, mostra il feedback negativo — la posizione non avanza ancora", () => {
     const { store, setClick } = renderQuiz();
     fireEvent.click(screen.getByText("❓ Quiz"));
     const target = currentTarget(store);
@@ -99,11 +102,11 @@ describe("Quiz", () => {
 
     setClick({ name: wrong, seq: 1 });
 
-    expect(store.getState().mode).toMatchObject({ quizScore: 0, quizPos: 1 });
+    expect(store.getState().mode).toMatchObject({ quizScore: 0, quizPos: 0 });
     screen.getByText(`✗ Era ${targetDef.label} — hai indicato ${wrongDef.label}`);
   });
 
-  it("il feedback scompare dopo FEEDBACK_MS, lasciando la domanda successiva", () => {
+  it("la domanda avanza solo dopo FEEDBACK_MS, non insieme al feedback (v12: quizPos++ dentro il setTimeout)", () => {
     const { store, setClick } = renderQuiz();
     fireEvent.click(screen.getByText("❓ Quiz"));
     const target = currentTarget(store);
@@ -111,10 +114,14 @@ describe("Quiz", () => {
 
     setClick({ name: target, seq: 1 });
     screen.getByText(`✓ Esatto — ${targetDef.label}`);
+    // Per tutta la finestra di feedback la domanda a video resta quella appena risposta.
+    screen.getByText(`Domanda 1 / ${QUIZ.length}`, { exact: false });
+    expect(store.getState().mode.quizPos).toBe(0);
 
     advance(FEEDBACK_MS);
 
     expect(screen.queryByText(`✓ Esatto — ${targetDef.label}`)).toBeNull();
+    expect(store.getState().mode.quizPos).toBe(1);
     screen.getByText(`Domanda 2 / ${QUIZ.length}`, { exact: false });
   });
 
@@ -124,9 +131,12 @@ describe("Quiz", () => {
     const target = currentTarget(store);
 
     setClick({ name: target, seq: 1 });
-    expect(store.getState().mode.quizPos).toBe(1);
+    expect(store.getState().mode.quizScore).toBe(1);
 
     setClick({ name: target, seq: 1 }); // stessa seq, nuovo oggetto: deve essere ignorato
+    expect(store.getState().mode.quizScore).toBe(1);
+
+    advance(FEEDBACK_MS);
     expect(store.getState().mode.quizPos).toBe(1);
   });
 
@@ -136,14 +146,22 @@ describe("Quiz", () => {
     const target = currentTarget(store);
 
     setClick({ name: target, seq: 1 });
-    expect(store.getState().mode.quizPos).toBe(1);
+    expect(store.getState().mode.quizScore).toBe(1);
+    expect(store.getState().mode.quizPos).toBe(0);
 
-    const nextTarget = currentTarget(store);
-    setClick({ name: nextTarget, seq: 2 }); // seq nuova, ma siamo ancora nella finestra di lock
-    expect(store.getState().mode.quizPos).toBe(1); // non contato
+    // quizPos non è ancora avanzato: questa è di nuovo la domanda corrente, non la prossima.
+    setClick({ name: currentTarget(store), seq: 2 }); // seq nuova, ma siamo ancora nella finestra di lock
+    expect(store.getState().mode.quizScore).toBe(1); // non contato
+    expect(store.getState().mode.quizPos).toBe(0);
 
     advance(FEEDBACK_MS);
-    setClick({ name: nextTarget, seq: 3 }); // ora il lock si è liberato
+    expect(store.getState().mode.quizPos).toBe(1);
+
+    const target2 = currentTarget(store);
+    setClick({ name: target2, seq: 3 }); // ora il lock si è liberato
+    expect(store.getState().mode.quizScore).toBe(2);
+
+    advance(FEEDBACK_MS);
     expect(store.getState().mode.quizPos).toBe(2);
   });
 
