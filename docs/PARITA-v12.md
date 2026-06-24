@@ -105,8 +105,74 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 
 ---
 
+## Blocco 5 — Tour (`startTour/endTour/advanceSlide/scheduleSlide/updateTourBar/tourGoRegion`)
+
+| v12 (righe) | Comportamento | Implementazione React | Stato |
+|---|---|---|---|
+| 997-998 | `TOUR` (9 regioni), `SLIDE_MS=5200` | `data/peste.ts` `TOUR`/`SLIDE_MS` | ✓ identici |
+| 1035-1036 | `tourPrev`/`tourNext`: wrap circolare, sempre toglie la pausa | `Tour.tsx` `goRegion` | ✓ |
+| 1034 | play/pausa: scambia icona ❚❚/▶ | `Tour.tsx` `handleTogglePause` | ✓ |
+| 1006 | "Tappa N / 9" + etichetta regione | `Tour.tsx:136-139` | ✓ |
+| 145-167, 295-304 | CSS `.tool-b`/`#tourBar`/`.tour-nav`/`.tour-label`/`.tour-step`/`.tour-x` (colori, dimensioni) | `Tour.module.css` | ✓ 1:1 (manca solo il posizionamento, vedi ✗5) |
+
+**✗ mancante:**
+
+1. **`ensurePlagueReady` non è mai stata implementata.** RICOGNIZIONE-v12.md §1 la pianificava come `features/plague/ensurePlagueReady.ts`, condivisa da Tour e Quiz: carica `FALLBACK.peste` come scena corrente, mostra la lezione, ferma un'eventuale animazione, forza i confini all'anno 1349. **Non esiste nessun file `features/plague/` né alcuna chiamata a `ensurePlagueReady` in tutto `src/`** (verificato per grep). `Tour.tsx handleStart` si limita ad accendere `bordersOn`/`plagueActive` sull'anno e sulla scena CORRENTI, qualunque essi siano — non sull'anno 1349 né su `FALLBACK.peste`. Se l'utente non ha già caricato la Peste a mano, il layer cliccabile potrebbe non comparire affatto e il pannello lezione resta su un'altra scena. È la lacuna più grande di questa tranche: condivisa identica dal Quiz (vedi Blocco 6).
+2. **Nessuna esclusione reciproca col Quiz.** v12 `startTour`: `if(quizActive||quizBar.classList.contains("on"))quizExit();` (riga 1023). `Tour.tsx handleStart` non dispatcha mai `endQuiz()`: avviare il tour mentre il quiz è attivo li lascia entrambi attivi insieme (e viceversa, Blocco 6 ✗2).
+3. **Esc non chiude il tour.** v12, terza catena Esc (righe 1099-1106): `if(tourActive){endTour();return;}`. Nessun componente React ascolta Esc per `endTour` (verificato per grep su tutto `src/features/`).
+4. **Ritardo di 680ms prima dell'apertura della card assente.** v12 `tourGoRegion` (riga 1008-1014): vola sulla regione, *poi* apre la card Instagram dopo un `setTimeout(...,680)` — il tempo per la camera di arrivare. `Tour.tsx:78-84` chiama `onFlyTo` e `onOpenIgCard` nello stesso istante: la card appare subito, non quando la camera è arrivata.
+5. **Posizione della barra attiva sbagliata.** v12 `#tourBar` è un overlay fisso indipendente (`position:fixed;bottom:190px;left:50%`, riga 157), separato dal `#toolBox` dei lanciatori. `Tour.module.css .bar` non ha alcun `position`: quando il tour è attivo, la barra finisce dentro `.tools` (il contenitore fisso a sinistra, `top:50%;left:18px` — `App.module.css`), non in basso al centro. Stesso problema nel Quiz (Blocco 6 ✗5).
+
+**⚠ differenza non pre-approvata, ma documentata nel codice (da confermare):**
+
+- v12 lascia `bordersOn`/Peste accesi per sempre dopo il tour; `Tour.tsx:40-44` li ripristina invece allo stato precedente all'ingresso (bookkeeping `ownedBordersRef`/`ownedPlagueRef`). Miglioramento deliberato e commentato, non sul brief originale.
+- v12 avanza slide-per-slide DENTRO la card (ogni `SLIDE_MS`) e passa alla regione successiva solo a card esaurita; `Tour.tsx:26-33` avanza invece sempre di regione ogni `SLIDE_MS`, lasciando la navigazione fra le slide della card solo manuale. Differenza deliberata e commentata.
+
+---
+
+## Blocco 6 — Quiz (`startQuiz/quizShow/quizAnswer/quizEnd/quizExit`)
+
+| v12 (righe) | Comportamento | Implementazione React | Stato |
+|---|---|---|---|
+| 1041-1050 | `QUIZ` (9 domande/risposte) | `data/peste.ts` `QUIZ` | ✓ identiche |
+| 1055 | `shuffle` (Fisher-Yates) | `quizLogic.ts shuffleOrder` | ✓ stesso algoritmo |
+| 1074 | confronto regione cliccata vs risposta attesa | `quizLogic.ts resolveQuizAnswer` | ✓ |
+| 1076-1077 | testo feedback "✓ Esatto — …" / "✗ Era … — hai indicato …" | `quizLogic.ts quizFeedbackText` | ✓ identico |
+| 1088-1089 | soglie risultato finale (.4/.75/1) | `quizLogic.ts quizResultMessage` | ✓ identiche |
+| 1083 | 1650ms di blocco (`quizLock`) prima di accettare un nuovo tap | `lockRef` in `Quiz.tsx` | ✓ |
+| 1070 | vista d'insieme `flyTo(54,10)` all'avvio | `OVERVIEW=[54,10]` in `quizLogic.ts` | ✓ identica |
+| 169-184, 306-316 | CSS `#quizBar`/`.quiz-*` (colori, dimensioni) | `Quiz.module.css` | ✓ 1:1 (manca solo il posizionamento, vedi ✗5) |
+
+**✗ mancante:**
+
+1. **`ensurePlagueReady` non è mai stata implementata** — stesso gap esatto del Tour (Blocco 5 ✗1): `Quiz.tsx handleStart` accende solo `bordersOn`/`plagueActive`, non carica mai `FALLBACK.peste` né forza l'anno 1349.
+2. **Nessuna esclusione reciproca col Tour.** v12 `startQuiz`: `if(tourActive)endTour();` (riga 1064). `Quiz.tsx handleStart` non dispatcha mai `endTour()`.
+3. **Esc non chiude il quiz** — stesso gap del Tour (terza catena Esc, riga 1102: `if(quizActive||quizBar.classList.contains("on")){quizExit();return;}`).
+4. **Punteggio/posizione avanzano troppo presto.** v12 incrementa `quizPos` solo *dopo* i 1650ms di feedback, dentro il `setTimeout` di `quizAnswer` (righe 1080-1083). `modeSlice.answerQuiz` invece viene dispatchato subito in `Quiz.tsx` (appena si risponde): per tutta la finestra di feedback lo schermo mostrerebbe già la domanda *successiva* (testo + "Domanda N/9") sovrapposta al messaggio di feedback ("✓ Esatto — …") della domanda *precedente*, invece di restare sulla domanda appena risposta come nel v12.
+5. **Posizione della barra attiva sbagliata** — stesso problema del Tour (Blocco 5 ✗5): `Quiz.module.css .bar` non ha `position:fixed;top:18px;left:50%` (v12 riga 170).
+6. **Testo "Preparo la mappa…" assente** — conseguenza diretta del punto 1: non c'è alcun caricamento asincrono da segnalare finché `ensurePlagueReady` non esiste.
+
+---
+
+## Blocco 7 — Timeline (`#play`, `#scrub`, `#curYear`)
+
+| v12 (righe) | Comportamento | Implementazione React | Stato |
+|---|---|---|---|
+| 949 | play/pausa: scambia icona ❚❚/▶ | `Timeline.tsx handleTogglePlay` | ✓ |
+| 950 | scrub 0-1000 → progress 0-1, ferma sempre il play | `Timeline.tsx handleScrub` | ✓ |
+| 1117 | avanzamento automatico `progress=(progress+.0014)%1` | `engine/loop.ts stepProgress` | ✓ identico |
+| 43-49, 200 | CSS `#timeline`/`#play`/`#scrub`/`#curYear` + override `body.present` | `Timeline.module.css` | ✓ 1:1 |
+| 1113 | rotazione automatica del globo suppressa durante tour/quiz (`!tourActive&&!quizActive`) | `App.tsx:106-108` `setIdleSpinSuppressed(tourActive\|\|quizActive)` | ✓ |
+
+**✗ mancante:**
+
+1. **Nessun reset/auto-play quando si carica una scena nuova.** v12 `renderScene(s)` termina *sempre* con `progress=0;scrub.value=0;playing=true;timeline.classList.add("on")` (riga 529-530): ogni scena nuova (IA, fallback, file caricato) riparte da zero e si avvia da sola. `GlobeEngine.renderScene` (React) non tocca mai `progress`/`playing`: il callback `onSceneReady` esiste (`GlobeEngine.ts:42,109`) ma `App.tsx` non lo registra (stesso pattern di `onBordersEraChange` prima del fix di oggi, Blocco 4) — generare una scena nuova lascia lo scrubber dov'era, in pausa se era in pausa.
+2. **La barra è sempre visibile, mai nascosta.** v12 `#timeline{display:none}` finché `renderScene` non aggiunge `.on` (riga 43-44, mai più rimossa) — la barra non esiste finché non c'è almeno una scena. In React `<Timeline/>` è sempre montata in `App.tsx` dal primo render. Impatto pratico ridotto: `App.tsx:82` carica già `FALLBACK.peste` al mount ("scena di prova per verificare il cablaggio"), quindi nella build attuale c'è sempre una scena fin dall'inizio — ma se quel caricamento di test venisse rimosso, la differenza diventerebbe visibile.
+
+---
+
 ## Blocchi non ancora passati in rassegna
 
-- Tour (`startTour/endTour/advanceSlide/scheduleSlide/updateTourBar/tourGoRegion`) — nota: intreccia con il punto ✗1 del Blocco 2 (`body.touring`).
-- Quiz (`startQuiz/quizShow/quizAnswer/quizEnd/quizExit`).
-- Timeline (`#play`, `#scrub`, `#curYear`).
+Nessuno — Tour/Quiz/Timeline erano gli ultimi tre elencati. Eventuali sezioni del v12
+non ancora confrontate (se ce ne sono) vanno individuate con una nuova lettura integrale
+del file di riferimento.
