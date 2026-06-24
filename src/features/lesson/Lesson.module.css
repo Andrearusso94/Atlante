@@ -245,10 +245,26 @@
   line-height: 1.6;
 }
 
-.status {
-  margin: 0;
+/* v12 riga 94/95 (.spin/@keyframes sp), composta dal CSS condiviso in styles/global.css. */
+.spin {
+  composes: spin from global;
+}
+
+/* v12 .m-load (riga 85): testo di caricamento della modale, icona + messaggio. */
+.modalLoad {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--dim);
   font-size: 14px;
+  padding: 30px 0;
+}
+
+/* v12 .m-load .spin (riga 86): nella modale lo spinner è leggermente più grande. */
+.modalSpin {
+  composes: spin from global;
+  width: 18px;
+  height: 18px;
 }
 
 .disclaimer {

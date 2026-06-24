@@ -38,7 +38,9 @@ const initialState: ModeState = {
   present: false,
   plagueActive: false,
   bordersOn: false,
-  theme: "day",
+  // v12 (riga 217: `<button data-theme="term" aria-pressed="true">`; riga 355: sole
+  // iniziale identico a THEMES.term) — il tema di partenza è "term", non "day".
+  theme: "term",
   playing: false,
 };
 

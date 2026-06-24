@@ -6,11 +6,11 @@ import { Provider } from "react-redux";
 import modeReducer from "../../store/modeSlice";
 import Controls from "./Controls";
 
-function renderControls() {
+function renderControls(eraLabel = "") {
   const store = configureStore({ reducer: { mode: modeReducer } });
   render(
     <Provider store={store}>
-      <Controls />
+      <Controls eraLabel={eraLabel} />
     </Provider>,
   );
   return store;
@@ -30,13 +30,18 @@ describe("Controls", () => {
     screen.getByTitle("Notte");
   });
 
-  it("riflette lo stato iniziale dello store: tema 'day' premuto, confini spenti", () => {
+  it("riflette lo stato iniziale dello store: tema 'term' premuto (v12: riga 217), confini spenti", () => {
     renderControls();
-    expect((screen.getByTitle("Giorno") as HTMLButtonElement).getAttribute("aria-pressed")).toBe("true");
-    expect((screen.getByTitle("Crepuscolo") as HTMLButtonElement).getAttribute("aria-pressed")).toBe("false");
+    expect((screen.getByTitle("Crepuscolo") as HTMLButtonElement).getAttribute("aria-pressed")).toBe("true");
+    expect((screen.getByTitle("Giorno") as HTMLButtonElement).getAttribute("aria-pressed")).toBe("false");
     expect(screen.getByRole("button", { name: /Confini reali dell'epoca/ }).getAttribute("aria-pressed")).toBe(
       "false",
     );
+  });
+
+  it("mostra l'etichetta dell'epoca passata da App.tsx (v12: testo di #bEra)", () => {
+    renderControls("mappa del mondo: 1500 d.C.");
+    screen.getByText("mappa del mondo: 1500 d.C.");
   });
 
   it("click su un tema dispatcha setTheme e aggiorna lo stato premuto", () => {

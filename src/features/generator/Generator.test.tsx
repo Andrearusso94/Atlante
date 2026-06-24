@@ -49,8 +49,11 @@ describe("Generator", () => {
     fireEvent.click(screen.getByRole("button", { name: "Genera" }));
 
     // Il dispatch del thunk scatta "pending" in modo sincrono, prima di risolvere generate().
+    // v12 (riga 642): il testo di caricamento vive nel pannello lezione, non qui — qui
+    // l'unico segnale di "busy" è la disabilitazione di campo e bottone (riga 641).
     expect(store.getState().spec.status).toBe("loading");
-    await waitFor(() => screen.getByText("L'IA sta costruendo la scena…"));
+    expect((screen.getByRole("button", { name: "Genera" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Richiesta per il generatore") as HTMLInputElement).disabled).toBe(true);
 
     await waitFor(() => expect(generateMock).toHaveBeenCalledWith("impero romano"));
     await waitFor(() => screen.getByText(/Coordinate generate dall'IA/));

@@ -100,7 +100,8 @@ export default function Generator() {
         ))}
       </div>
 
-      {status === "loading" && <p className={styles.status}>L'IA sta costruendo la scena…</p>}
+      {/* v12 (riga 642): il testo "L'IA sta costruendo la scena…" sovrascrive il
+          pannello lezione, non l'area del generatore — vedi features/lesson/Lesson.tsx. */}
       {status === "error" && error && !fallbackNotice && <p className={styles.error}>{describeSpecError(error.code)}</p>}
       {aiNotice && <p className={styles.notice}>⚠ {aiNotice}</p>}
       {fallbackNotice && <p className={styles.notice}>{fallbackNotice}</p>}

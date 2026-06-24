@@ -33,13 +33,21 @@
   color: var(--gold-2);
 }
 
-.bordersToggle {
+.bordersBox {
   composes: glass from global;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  max-width: 240px;
+  padding: 9px 12px;
+}
+
+.bordersToggle {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 9px 12px;
-  max-width: 240px;
+  background: transparent;
   border: none;
   color: var(--dim);
   font: inherit;
@@ -80,4 +88,10 @@
 .bordersToggle[aria-pressed="true"] .switch::after {
   left: 18px;
   background: var(--gold);
+}
+
+.era {
+  font-size: 10px;
+  color: var(--cyan);
+  min-height: 12px;
 }

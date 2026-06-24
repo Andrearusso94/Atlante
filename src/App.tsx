@@ -38,6 +38,9 @@ export default function App() {
   const [tick, setTick] = useState<TickPayload | null>(null);
   const [quizClick, setQuizClick] = useState<QuizClick | null>(null);
   const [igCardOpen, setIgCardOpen] = useState<IgCardOpen | null>(null);
+  // v12: testo di #bEra. Come progress/playing/anno (onTick), arriva dal motore via
+  // callback e resta in stato locale React — mai in Redux (RICOGNIZIONE-v12.md §4).
+  const [bordersEra, setBordersEra] = useState("");
 
   // Apre la card Instagram (features/igCard) per la regione `name` — chiamata sia dal
   // coordinatore del click sul globo qui sotto, sia dalle tappe del Tour (prop
@@ -60,6 +63,7 @@ export default function App() {
 
     const engine = new GlobeEngine({
       onTick: setTick,
+      onBordersEraChange: setBordersEra,
       onPlagueRegionClick: (name) => {
         switch (routePlagueClick(modeRef.current)) {
           case "quiz":
@@ -119,7 +123,7 @@ export default function App() {
         <Lesson />
       </div>
       <div className={styles.ctrlR}>
-        <Controls />
+        <Controls eraLabel={bordersEra} />
       </div>
       <div className={styles.bottomStack}>
         <Timeline

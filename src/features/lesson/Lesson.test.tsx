@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import { ApiError } from "../../api/errors";
-import specReducer, { setCurrentSpec } from "../../store/specSlice";
+import specReducer, { generateScene, setCurrentSpec } from "../../store/specSlice";
 import lessonReducer from "../../store/lessonSlice";
 import { FALLBACK } from "../../data/fallback";
 import type { SceneSpec, LessonCard } from "../../types/scene";
@@ -50,6 +50,15 @@ describe("Lesson", () => {
     const saveButton = screen.getByRole("button", { name: "⤓ Salva lezione" }) as HTMLButtonElement;
     expect(saveButton.disabled).toBe(true);
     screen.getByRole("button", { name: "⤴ Carica lezione" });
+  });
+
+  it("v12 (riga 642): mentre si genera una nuova scena, il pannello mostra il caricamento al posto del contenuto", async () => {
+    const store = renderLesson(FALLBACK.roma);
+
+    store.dispatch(generateScene.pending("req-1", "una richiesta"));
+
+    await waitFor(() => screen.getByText("L'IA sta costruendo la scena…"));
+    expect(screen.queryByText(FALLBACK.roma.title)).toBeNull();
   });
 
   it("evento con detail curato (FALLBACK.peste): mostra il contesto senza mai chiamare aiLesson", async () => {

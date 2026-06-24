@@ -10,10 +10,17 @@ const THEMES: { value: Theme; icon: string; label: string }[] = [
   { value: "night", icon: "☾", label: "Notte" },
 ];
 
+export interface ControlsProps {
+  /** v12: testo di `#bEra` ("mappa del mondo: 1500" / "mappa del 1300 · ☩ Peste Nera —
+   * tocca un territorio"). Arriva da `GlobeEngine.onBordersEraChange` via App.tsx, mai
+   * da Redux (stesso principio di onTick, RICOGNIZIONE-v12.md §4). */
+  eraLabel: string;
+}
+
 // Dispatcha solo modeSlice (setTheme/setBordersOn, blocco 9) — il collegamento al motore
 // (GlobeEngine.setTheme/setBorders) vive già negli useEffect di App.tsx (blocco 10): qui
 // la feature dice "cosa" mostrare, non tocca mai tre.js né GlobeEngine direttamente.
-export default function Controls() {
+export default function Controls({ eraLabel }: ControlsProps) {
   const dispatch = useAppDispatch();
   const theme = useAppSelector(selectTheme);
   const bordersOn = useAppSelector(selectBordersOn);
@@ -35,15 +42,18 @@ export default function Controls() {
         ))}
       </div>
 
-      <button
-        type="button"
-        className={styles.bordersToggle}
-        aria-pressed={bordersOn}
-        onClick={() => dispatch(setBordersOn(!bordersOn))}
-      >
-        <span>Confini reali dell'epoca</span>
-        <span className={styles.switch} />
-      </button>
+      <div className={styles.bordersBox}>
+        <button
+          type="button"
+          className={styles.bordersToggle}
+          aria-pressed={bordersOn}
+          onClick={() => dispatch(setBordersOn(!bordersOn))}
+        >
+          <span>Confini reali dell'epoca</span>
+          <span className={styles.switch} />
+        </button>
+        <div className={styles.era}>{eraLabel}</div>
+      </div>
     </div>
   );
 }

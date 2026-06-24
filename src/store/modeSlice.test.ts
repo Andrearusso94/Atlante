@@ -29,7 +29,7 @@ describe("modeSlice reducers", () => {
       present: false,
       plagueActive: false,
       bordersOn: false,
-      theme: "day",
+      theme: "term",
       playing: false,
     });
   });

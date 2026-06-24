@@ -11,7 +11,7 @@ import {
   selectLessonStatus,
   setLessonCard,
 } from "../../store/lessonSlice";
-import { selectCurrentSpec, setCurrentSpec } from "../../store/specSlice";
+import { selectCurrentSpec, selectSpecStatus, setCurrentSpec } from "../../store/specSlice";
 import { safeParseSceneSpec, type LessonCard } from "../../types/scene";
 import { fmtY } from "../../engine/geo";
 import { describeSpecError } from "../generator/errorMessages";
@@ -42,6 +42,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 export default function Lesson() {
   const dispatch = useAppDispatch();
   const currentSpec = useAppSelector(selectCurrentSpec);
+  // v12 (onGenerate, riga 642): mentre l'IA costruisce una nuova scena, il testo di
+  // caricamento sovrascrive il pannello lezione (#lessonBody) — non il generatore.
+  const specStatus = useAppSelector(selectSpecStatus);
   const modalOpen = useAppSelector(selectLessonModalOpen);
   const openEventIndex = useAppSelector(selectLessonOpenEventIndex);
   const card = useAppSelector(selectLessonCard);
@@ -141,7 +144,12 @@ export default function Lesson() {
   return (
     <>
       <div className={styles.panel}>
-        {!currentSpec ? (
+        {specStatus === "loading" ? (
+          <p className={styles.placeholder}>
+            <span className={styles.spin} />
+            L'IA sta costruendo la scena…
+          </p>
+        ) : !currentSpec ? (
           <p className={styles.placeholder}>
             <strong>Pronto per la lezione.</strong> Scrivi una richiesta nel generatore o tocca un esempio.
           </p>
@@ -227,7 +235,12 @@ export default function Lesson() {
             <p className={styles.eyebrow}>{fmtY(entry.year)}</p>
             <h2 className={styles.modalTitle}>{entry.event}</h2>
             <div className={styles.modalBody}>
-              {status === "loading" && <p className={styles.status}>Sto preparando la lezione…</p>}
+              {status === "loading" && (
+                <div className={styles.modalLoad}>
+                  <span className={styles.modalSpin} />
+                  Sto preparando la lezione…
+                </div>
+              )}
               {status === "error" && error && !card && <p className={styles.error}>{describeSpecError(error.code)}</p>}
               {card && (
                 <>

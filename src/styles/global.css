@@ -96,3 +96,23 @@ h1 {
   margin: 7px 0 0;
   line-height: 1.5;
 }
+
+/* v12 riga 94 (.spin) + riga 95 (@keyframes sp): icona di caricamento condivisa dai
+   pannelli generatore/lezione (composes: spin from global nei rispettivi CSS module). */
+.spin {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 7px;
+  animation: sp 0.8s linear infinite;
+}
+
+@keyframes sp {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -50,11 +50,14 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 | 69-90 | CSS `#overlay`/`#modal`/`.m-*` (dimensioni, backdrop, blur) | `Lesson.module.css` | ✓ 1:1 |
 | — | nessuna gestione del focus (niente `.focus()`/trap in tutto il v12) | nessuna gestione del focus in `Lesson.tsx`/`IgCard.tsx` | ✓ assenza fedele — gap di accessibilità preesistente, non introdotto da React |
 
-**✗ mancante:**
+**✓ corretto in questo blocco:**
+
+3. ~~Spinner mancante nel testo di caricamento della modale.~~ v12 riga 571: `<div class="m-load"><span class="spin"></span> Sto preparando la lezione…</div>`. Portato `.spin`/`@keyframes sp` in `styles/global.css` (utility condivisa); `Lesson.module.css` la compone come `.modalSpin` (18px, v12 riga 86: `.m-load .spin{width:18px;height:18px}`) dentro un nuovo wrapper `.modalLoad` (v12 `.m-load`, riga 85). `Lesson.tsx:238-243` ora usa `<div className={styles.modalLoad}><span className={styles.modalSpin}/>Sto preparando la lezione…</div>`.
+
+**✗ mancante (non toccato in questo blocco):**
 
 1. **Animazione di apertura/chiusura assente.** v12 righe 72-74 (`#modal{transform:translateX(40px) scale(.97);opacity:0;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .4s ease;}` + `#overlay.on #modal{transform:none;opacity:1}`) e righe 102-104 (stesso per `#igCard`, con `translateY(20px)` invece di `translateX(40px)`). Né `.modal` (`Lesson.module.css`) né `.card` (`IgCard.module.css`) hanno queste proprietà: oggi le due modali compaiono/scompaiono di scatto (mount/unmount React diretto), senza scivolata+scala+dissolvenza.
-2. **Override "tour" sul backdrop della card assente.** v12 riga 203: `body.touring #igOverlay{background:rgba(3,6,12,.28);backdrop-filter:blur(2px)}`, scritta da `startTour`/`endTour` (righe 1027/1031). Nessuna classe `touring` esiste nel codice React, né regola corrispondente in `IgCard.module.css`. Dipende dal Tour (fuori scope di questa tranche) ma riguarda l'overlay della card, quindi lo segnalo qui.
-3. **Spinner mancante nel testo di caricamento della modale.** v12 riga 571: `<div class="m-load"><span class="spin"></span> Sto preparando la lezione…</div>`. `Lesson.tsx:230` mostra lo stesso testo ("Sto preparando la lezione…") ma come `<p>` semplice — l'icona rotante (classe `.spin` + `@keyframes sp`) non esiste in nessun file CSS del progetto (stesso problema nel Blocco 3, Generatore).
+2. **Override "tour" sul backdrop della card assente.** v12 riga 203: `body.touring #igOverlay{background:rgba(3,6,12,.28);backdrop-filter:blur(2px)}`, scritta da `startTour`/`endTour` (righe 1027/1031). Nessuna classe `touring` esiste nel codice React, né regola corrispondente in `IgCard.module.css`. Dipende dal Tour — da valutare nella prossima tranche (Tour/Quiz/Timeline).
 
 ---
 
@@ -74,12 +77,15 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 - Notice "Non ho raggiunto l'IA: mostro l'esempio offline "X"." mostrata quando scatta il fallback — il v12 non mostra nulla in questo caso. Corrisponde esattamente al punto approvato "messaggi 'non ho raggiunto l'IA' assenti nel v12".
 - `lastDataNote` ridotto a una stringa generica fissa, mostrata solo dopo una generazione IA riuscita (non su file caricato/fallback/Peste) — il v12 lo varia per archetipo (Wikidata, confini reali trovati/non trovati). Corrisponde al punto approvato "lastDataNote solo su generazioni IA"; già autodocumentato in `Generator.tsx:12-14`.
 - Quando falliscono sia l'IA sia il fallback, il v12 mostra un testo fisso con suggerimenti ("Prova: impero romano, Colombo, peste nera", riga 646); React mostra invece `describeSpecError(error.code)` (es. "L'IA ha risposto con un errore — riprova o cambia richiesta."). Il testo coi suggerimenti del v12 non viene mai riprodotto in nessun caso — rientra nell'ombrello approvato della messaggistica d'errore via Worker/Zod, segnalo solo per completezza.
+- **Sezione "Esempi offline (senza IA)" non esiste nel v12** — 3 bottoni aggiuntivi (`Generator.tsx:108-117`) che caricano `FALLBACK.*` senza mai chiamare l'IA, con etichette diverse dai chip veri ("Impero romano" vs "L'espansione dell'impero romano"). Decisione presa: è un miglioramento intenzionale, si tiene — non un gap da correggere.
 
-**✗ mancante / da decidere (non in lista approvata, solo segnalate):**
+**✓ corretto in questo blocco:**
 
-1. Il bottone "Genera" (e il campo testo) si disabilitano anche a testo vuoto (`!q.trim()`, `Generator.tsx:82,84`). Il v12 lascia sempre il bottone abilitato — il controllo "vuoto" è solo dentro `onGenerate()`, cliccare a vuoto non fa nulla ma il bottone resta normale. Differenza di UX non catalogata.
-2. **Sezione "Esempi offline (senza IA)" non esiste nel v12** — 3 bottoni aggiuntivi (`Generator.tsx:108-117`) che caricano `FALLBACK.*` senza mai chiamare l'IA, con etichette diverse dai chip veri ("Impero romano" vs "L'espansione dell'impero romano"). È un'aggiunta strutturale, non una mancanza, ma non è nella lista delle differenze concordate — segnalo perché qualcuno deve decidere se è voluta.
-3. Spinner mancante nel messaggio "L'IA sta costruendo la scena…" (v12 riga 642: affiancato da `<span class="spin">`); inoltre nel v12 questo testo sostituisce il contenuto del **pannello lezione** (`#lessonBody`), mentre in React appare nel **pannello generatore** stesso (`Generator.tsx:103`) — icona e posizione entrambe diverse (stesso gap di spinner del Blocco 2).
+3. ~~Spinner mancante + posizione sbagliata nel messaggio "L'IA sta costruendo la scena…".~~ v12 riga 642 lo mostra sovrascrivendo il **pannello lezione** (`#lessonBody`), affiancato da `<span class="spin">`. Il messaggio è stato rimosso da `Generator.tsx` (resta solo la disabilitazione di campo/bottone, fedele a v12) e spostato in `Lesson.tsx:147-151`, che ora legge anche `selectSpecStatus` e mostra `<span className={styles.spin}/>L'IA sta costruendo la scena…` al posto del contenuto normale del pannello — esattamente come l'`innerHTML` del v12 sovrascriveva `#lessonBody`.
+
+**✗ mancante / da decidere (non toccato in questo blocco):**
+
+1. Il bottone "Genera" (e il campo testo) si disabilitano anche a testo vuoto (`!q.trim()`, `Generator.tsx:82,84`). Il v12 lascia sempre il bottone abilitato — il controllo "vuoto" è solo dentro `onGenerate()`, cliccare a vuoto non fa nulla ma il bottone resta normale. Differenza di UX non catalogata, lasciata com'è.
 
 ---
 
@@ -92,10 +98,10 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 | 221 | `bordersOn` parte `false` | `modeSlice.ts` `initialState.bordersOn=false` | ✓ |
 | 23-32 | CSS `.themeBox`/`.themeButton`/`.bordersToggle`/`.switch` | `Controls.module.css` | ✓ 1:1 |
 
-**✗ mancante:**
+**✓ corretto in questo blocco:**
 
-1. **Tema predefinito sbagliato.** Il v12 parte su **"term"** (riga 217: `<button data-theme="term" aria-pressed="true">`; riga 355: `sun=new THREE.Vector3(1,.18,.30)`, identico a `THEMES.term`). `modeSlice.ts` ha invece `theme:"day"` come default. Il motore (`engine/globe.ts:76`) di per sé inizializza il sole correttamente su `(1,.18,.30)` — fedele! — ma `App.tsx:94-96` applica subito `engine.setTheme(theme)` con `theme="day"` letto dallo store al mount, sovrascrivendolo con `(0.15,0.12,1)`. Risultato: al primo caricamento il globo e il pulsante evidenziato mostrano "Giorno" invece di "Crepuscolo" come nel v12. È un bug concreto (non una scelta) — fix minimo: `theme: "term"` in `modeSlice.ts`.
-2. **Etichetta dell'epoca (`#bEra`) assente.** Il v12 mostra sotto lo switch un testo che cambia con l'anno/i confini ("mappa del mondo: 1500" o "mappa del 1300 · ☩ Peste Nera — tocca un territorio", righe 222, 684, 875). `GlobeEngine` espone già il callback `onBordersEraChange` (`GlobeEngine.ts:43-44`, invocato alle righe 191/205), ma `App.tsx:61-76` costruisce `GlobeEngine` passando solo `onTick`/`onPlagueRegionClick` — il callback non viene mai registrato, quindi nessun componente mostra il testo: il dato viene calcolato dal motore e scartato.
+1. ~~Tema predefinito sbagliato.~~ Il v12 parte su **"term"** (riga 217: `<button data-theme="term" aria-pressed="true">`; riga 355: `sun=new THREE.Vector3(1,.18,.30)`, identico a `THEMES.term`). `modeSlice.ts` aveva `theme:"day"` come default, sovrascrivendo al mount il sole corretto già inizializzato da `engine/globe.ts:76`. Corretto: `initialState.theme` ora è `"term"` — store e motore combaciano dal primo render, nessuna sovrascrittura silenziosa.
+2. ~~Etichetta dell'epoca (`#bEra`) assente.~~ Il v12 mostra sotto lo switch un testo che cambia con l'anno/i confini ("mappa del mondo: 1500" o "mappa del 1300 · ☩ Peste Nera — tocca un territorio", righe 222, 684, 875). Collegato `onBordersEraChange` (già esposto da `GlobeEngine`) in `App.tsx` a un nuovo stato locale `bordersEra`, passato come prop `eraLabel` a `Controls`. Ricreata la struttura del v12: nuovo `.bordersBox` (v12 `#bordersBox`, glass+flex-column) avvolge il bottone `bordersToggle` (ora senza vetro proprio, come `.swt` nel v12) e un nuovo `.era` (v12 `#bEra`: 10px, colore ciano, min-height 12px) che mostra `eraLabel`.
 
 ---
 

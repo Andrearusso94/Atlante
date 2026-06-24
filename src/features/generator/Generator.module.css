@@ -85,12 +85,6 @@
   cursor: default;
 }
 
-.status {
-  margin: 0;
-  font-size: 12px;
-  color: var(--dim);
-}
-
 .error {
   margin: 0;
   font-size: 12px;
