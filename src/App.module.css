@@ -1,7 +1,15 @@
-/* Posizioni fixed reali del v12 per i contenitori composti in App.tsx (il "dove" sullo
-   schermo): l'aspetto vetro/tipografia vive nei CSS module di ogni feature (il "cosa").
-   `chrome` compone la regola :global(body.present) del blocco 18 (features/present/) —
-   non duplicarla qui. */
+/* Posizioni fixed per i contenitori composti in App.tsx (il "dove" sullo schermo):
+   l'aspetto vetro/tipografia vive nei CSS module di ogni feature (il "cosa"); la
+   visibilità in presentazione (`chrome`, blocco 18) vive nel modulo di ogni feature
+   che la richiede (Generator/Lesson/Controls), non qui.
+
+   Ritocco layout: il v12 piazzava #aiBar/#timeline con coordinate fisse in pixel
+   (bottom:20/122) assumendo un'altezza fissa per #aiBar — qui il pannello del
+   Generatore è più alto (notizie/esempi offline), quindi `.bottomStack` li impila in
+   un vero flexbox (gap, non pixel assoluti): Timeline si sposta su da sola qualunque
+   sia l'altezza del Generatore, senza più rischio di sovrapposizione. Stessa logica
+   per `.tools` (Presentazione/Tour/Quiz, ex #toolBox): colonna propria a sinistra,
+   centrata in verticale, fuori dalla fascia del Generatore. */
 
 .head {
   composes: glass from global;
@@ -14,9 +22,9 @@
   max-width: 300px;
 }
 
-/* v12 #ctrlR: solo un contenitore flex — il vetro sta sui suoi figli (Controls.module.css). */
+/* v12 #ctrlR: solo un contenitore flex — il vetro (e il fade in presentazione) stanno
+   sul pannello di Controls.module.css. */
 .ctrlR {
-  composes: chrome from "./features/present/Present.module.css";
   position: fixed;
   top: 18px;
   right: 18px;
@@ -28,7 +36,6 @@
 }
 
 .lesson {
-  composes: chrome from "./features/present/Present.module.css";
   position: fixed;
   top: 150px;
   right: 18px;
@@ -38,45 +45,35 @@
   z-index: 10;
 }
 
-.aiBar {
-  composes: chrome from "./features/present/Present.module.css";
+/* Timeline (sempre visibile anche in presentazione, v12 non la nasconde) sopra il
+   Generatore (nascosto lui in presentazione, via Generator.module.css) — un flexbox,
+   non due coordinate fisse: zero rischio di sovrapposizione qualunque sia l'altezza
+   reale del pannello del Generatore. */
+.bottomStack {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
 }
 
-.timeline {
-  position: fixed;
-  bottom: 122px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 11;
-}
-
-/* v12 #toolBox (left:18,top:50%): qui solo il bottone Presentazione — Tour/Quiz hanno
-   una propria posizione reale (#tourBar/#quizBar) e restano dove sono già. */
-.present {
+/* v12 #toolBox (left:18,top:50%): Presentazione/Tour/Quiz in una colonna propria,
+   centrata in verticale sul lato sinistro — lontana sia dal Generatore/Timeline (basso-
+   centro) sia da Lezione (destra) sia da Controlli (alto-destra). z-index alto (come il
+   v12 #tourBar) perché durante il tour la barra deve restare sopra la card Instagram
+   (IgCard, z-index:50) che si apre ad ogni tappa. */
+.tools {
   position: fixed;
   top: 50%;
   left: 18px;
   transform: translateY(-50%);
-  z-index: 13;
-}
-
-.tour {
-  position: fixed;
-  bottom: 190px;
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 60;
-}
-
-.quiz {
-  position: fixed;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }

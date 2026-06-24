@@ -115,32 +115,26 @@ export default function App() {
         <h1>Scrivi la storia, guardala</h1>
         <p className="sub">Scaffold pronto — tema corrente: {theme}</p>
       </div>
-      <div className={styles.aiBar}>
-        <Generator />
-      </div>
       <div className={styles.lesson}>
         <Lesson />
       </div>
       <div className={styles.ctrlR}>
         <Controls />
       </div>
-      <div className={styles.present}>
-        <Present />
-      </div>
-      <div className={styles.timeline}>
+      <div className={styles.bottomStack}>
         <Timeline
           tick={tick}
           onSetPlaying={(on) => engineRef.current?.setPlaying(on)}
           onSetProgress={(p) => engineRef.current?.setProgress(p)}
         />
+        <Generator />
       </div>
-      <div className={styles.tour}>
+      <div className={styles.tools}>
+        <Present />
         <Tour
           onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)}
           onOpenIgCard={openIgCard}
         />
-      </div>
-      <div className={styles.quiz}>
         <Quiz click={quizClick} onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
       </div>
       <IgCard open={igCardOpen} />

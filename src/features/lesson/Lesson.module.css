@@ -3,6 +3,7 @@
 
 .panel {
   composes: glass from global;
+  composes: chrome from "../present/Present.module.css";
   display: flex;
   flex-direction: column;
   height: 100%;
