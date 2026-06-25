@@ -62,8 +62,9 @@ export default function Lesson() {
   const entry = openEventIndex != null ? timeline[openEventIndex] : undefined;
 
   // v12 (openModal/closeModal, righe 547-548): stessa gestione della classe sul body di
-  // IgCard.tsx per `body.modal-open` — letta da styles/global.css (#scene) e
-  // App.module.css (pannelli), che attenuano/sfocano lo sfondo a modale aperta.
+  // IgCard.tsx per `body.modal-open` — letta da styles/global.css (#scene),
+  // App.module.css (head/ctrlR/bottomStack) e Lesson.module.css (.panel, qui sotto:
+  // deve restare locale, non in App.tsx — vedi nota nel CSS).
   useEffect(() => {
     if (!modalOpen) return;
     document.body.classList.add("modal-open");

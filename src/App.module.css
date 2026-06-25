@@ -35,15 +35,15 @@
   align-items: flex-end;
 }
 
-.lesson {
-  position: fixed;
-  top: 150px;
-  right: 18px;
-  bottom: 200px;
-  width: 330px;
-  max-width: 86vw;
-  z-index: 10;
-}
+/* Posizione/attenuazione del pannello lezione vivono in Lesson.module.css (.panel),
+   non qui — niente wrapper attorno a <Lesson/> in App.tsx. Motivo (bug reale trovato,
+   non solo stile): Lesson.tsx rende pannello e modale come fratelli nello stesso
+   Fragment; se questo div li avesse avvolti insieme, la modale (position:fixed)
+   sarebbe finita imprigionata nel containing block creato da `filter` su questo
+   contenitore quando body.modal-open lo attenua (e ne avrebbe comunque ereditato
+   opacity/pointer-events) — risultato osservato: la modale appariva sfocata e
+   inutilizzabile invece di aprirsi a piena pagina. IgCard non ha questo problema
+   perché in App.tsx è già un fratello diretto, senza wrapper. */
 
 /* Timeline (sempre visibile anche in presentazione, v12 non la nasconde) sopra il
    Generatore (nascosto lui in presentazione, via Generator.module.css) — un flexbox,
@@ -96,19 +96,18 @@
 
 /* v12 righe 65-67: a modale aperta (lezione o card IG, body.modal-open) i pannelli
    intorno al globo si attenuano e smettono di reagire al puntatore — stesso bersaglio
-   del v12 (#head,#ctrlR,#lesson,#timeline,#aiBar); bottomStack sostituisce la coppia
+   del v12 (#head,#ctrlR,#lesson,#timeline,#aiBar) salvo lezione (regola gemella in
+   Lesson.module.css .panel, vedi nota sopra); bottomStack sostituisce la coppia
    #timeline/#aiBar (vedi commento in testa al file). Il blur/scale del globo stesso
    vive su #scene in styles/global.css (id reale, non un modulo). */
 .head,
 .ctrlR,
-.lesson,
 .bottomStack {
   transition: opacity 0.4s ease, filter 0.5s ease;
 }
 
 :global(body.modal-open) .head,
 :global(body.modal-open) .ctrlR,
-:global(body.modal-open) .lesson,
 :global(body.modal-open) .bottomStack {
   opacity: 0.25;
   filter: blur(2px);

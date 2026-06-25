@@ -172,9 +172,7 @@ export default function App() {
         <h1>Scrivi la storia, guardala</h1>
         <p className="sub">Scaffold pronto — tema corrente: {theme}</p>
       </div>
-      <div className={styles.lesson}>
-        <Lesson />
-      </div>
+      <Lesson />
       <div className={styles.ctrlR}>
         <Controls eraLabel={bordersEra} />
       </div>

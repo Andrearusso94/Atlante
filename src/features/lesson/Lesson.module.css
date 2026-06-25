@@ -4,12 +4,31 @@
 .panel {
   composes: glass from global;
   composes: chrome from "../present/Present.module.css";
+  position: fixed;
+  top: 150px;
+  right: 18px;
+  bottom: 200px;
+  width: 330px;
+  max-width: 86vw;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  height: 100%;
   overflow-y: auto;
   padding: 18px 18px 8px;
   font-size: 13px;
+  transition: opacity 0.4s ease, filter 0.5s ease;
+}
+
+/* v12 righe 65-67/546-548 (body.modal-open): il pannello si attenua/sfoca a modale
+   aperta — DEVE restare qui (non in un wrapper di App.tsx) perché il Fragment di
+   questo componente rende `.overlay` (la modale, position:fixed) come fratello di
+   `.panel`, non figlio: un antenato comune con `filter` applicato imprigionerebbe la
+   modale nel containing block del pannello invece di lasciarla a piena pagina (bug
+   reale osservato prima di questo isolamento, non solo teorico). */
+:global(body.modal-open) .panel {
+  opacity: 0.25;
+  filter: blur(2px);
+  pointer-events: none;
 }
 
 .placeholder {

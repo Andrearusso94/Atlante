@@ -52,8 +52,10 @@ body {
 
 /* v12 righe 65-67: quando una modale è aperta (lezione o card IG, entrambe scrivono
    body.modal-open — Lesson.tsx/IgCard.tsx), il globo si scosta e si sfoca. I pannelli
-   intorno (head/controlli/lezione/timeline/generatore) si attenuano: regole in
-   App.module.css, stesso bersaglio del v12 (#head,#ctrlR,#lesson,#timeline,#aiBar). */
+   intorno si attenuano: head/controlli/timeline/generatore in App.module.css, il
+   pannello lezione invece in Lesson.module.css (.panel) — deve restare lì, non in un
+   wrapper di App.tsx (vedi nota in quel CSS) — stesso bersaglio del v12
+   (#head,#ctrlR,#lesson,#timeline,#aiBar). */
 body.modal-open #scene {
   transform: translateX(-13%) scale(1.04);
   filter: blur(3px) brightness(0.7);
