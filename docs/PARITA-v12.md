@@ -213,6 +213,28 @@ fino ad ora — qui si confronta riga per riga con v12 righe 185-201 (CSS) e 987
 
 ---
 
+## Blocco 9 — Pannello lezione: scheda didattica (`renderLesson`, righe 533-544)
+
+Mai passato in rassegna come blocco a sé: il Blocco 2 copre la modale (`#overlay`/
+`#modal`, righe 546+) ma non il pannello di base (`#lessonBody`) che la precede nel
+v12. Qui si confrontano titolo/periodo/riassunto e la riga di cronologia cliccabile.
+
+| v12 (righe) | Comportamento | Implementazione React | Stato |
+|---|---|---|---|
+| 540 | `esc(s.title\|\|"")`/`esc(s.period\|\|"")`/`esc(s.summary\|\|"")`: titolo, periodo e riassunto sono **sempre** renderizzati, anche vuoti — a differenza di cronologia/punti chiave/domande sotto, omesse per intero se l'array è vuoto | `Lesson.tsx:162-164` | ✓ |
+| 536 | `<span class="card-x">›</span>` — chevron a fianco di ogni riga della cronologia, indica che è cliccabile | `Lesson.tsx:175-177`, `Lesson.module.css .cardChevron` | ✓ |
+
+**✓ corretto in questo blocco:**
+
+1. **`period`/`summary` nascondevano l'intero tag `<p>` quando il campo era vuoto/assente.** Il porting usava `{currentSpec.period && <p>...}` (stesso per `summary`): a differenza del v12, che renderizza sempre `<p class="lPeriod">`/`<p class="lSum">` (eventualmente vuoti), il React rimuoveva il tag dal DOM. Corretto in `Lesson.tsx:163-164` con `currentSpec.period ?? ""` / `currentSpec.summary ?? ""`, sempre renderizzati come nel v12 (`title` lo era già, essendo un campo obbligatorio nello schema Zod — nessun `&&` lo nascondeva).
+2. **Chevron `›` mancante su ogni riga della cronologia.** Aggiunto `<span className={styles.cardChevron} aria-hidden="true">›</span>` dentro ogni `.card` (`Lesson.tsx:175-177`) e la relativa regola CSS (v12 `.card-x`, riga 60) in `Lesson.module.css`, qualificata come `.card .cardChevron` (non solo `.cardChevron`) per battere in specificità `.card span{flex:1}` già presente, che altrimenti avrebbe steso il chevron a piena larghezza invece di `flex:0 0 auto`.
+
+Test aggiunti in `Lesson.test.tsx`: period/summary assenti restano nel DOM come tag
+vuoti; period/summary presenti vengono mostrati per intero; ogni riga della cronologia
+espone il chevron (`aria-hidden`, conteggio pari alle voci di `teaching.timeline`).
+
+---
+
 ## Blocchi non ancora passati in rassegna
 
 Nessuno — Tour/Quiz/Timeline/Presentazione erano gli ultimi elencati. Eventuali sezioni

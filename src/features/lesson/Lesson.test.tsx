@@ -52,6 +52,34 @@ describe("Lesson", () => {
     screen.getByRole("button", { name: "⤴ Carica lezione" });
   });
 
+  it("v12 (riga 540): period/summary assenti restano nel DOM come tag vuoti, non vengono rimossi", () => {
+    renderLesson(AI_SPEC);
+
+    const title = screen.getByText("Guerre puniche");
+    const period = title.nextElementSibling as HTMLElement;
+    const summary = period.nextElementSibling as HTMLElement;
+
+    expect(period.tagName).toBe("P");
+    expect(period.textContent).toBe("");
+    expect(summary.tagName).toBe("P");
+    expect(summary.textContent).toBe("");
+  });
+
+  it("v12 (riga 540): period/summary presenti vengono mostrati per intero", () => {
+    renderLesson(FALLBACK.roma);
+
+    screen.getByText(FALLBACK.roma.period!);
+    screen.getByText(FALLBACK.roma.summary!);
+  });
+
+  it("v12 (riga 536): ogni riga della cronologia mostra il chevron cliccabile (›)", () => {
+    renderLesson(FALLBACK.roma);
+
+    const chevrons = screen.getAllByText("›");
+    expect(chevrons).toHaveLength(FALLBACK.roma.teaching?.timeline?.length ?? 0);
+    chevrons.forEach((c) => expect(c.getAttribute("aria-hidden")).toBe("true"));
+  });
+
   it("v12 (riga 642): mentre si genera una nuova scena, il pannello mostra il caricamento al posto del contenuto", async () => {
     const store = renderLesson(FALLBACK.roma);
 

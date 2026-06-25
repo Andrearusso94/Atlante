@@ -82,6 +82,16 @@
   flex: 1;
 }
 
+/* v12 .card-x (riga 60): chevron a fianco dell'evento, indica che la card è cliccabile.
+   Selettore qualificato con .card (non solo .cardChevron) per battere in specificità la
+   regola "flex:1" di .card span qui sopra, che altrimenti vincerebbe su questo span. */
+.card .cardChevron {
+  flex: 0 0 auto;
+  color: var(--cyan);
+  font-size: 16px;
+  line-height: 1;
+}
+
 .keyPoint {
   margin: 0 0 7px;
   padding-left: 14px;

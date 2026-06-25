@@ -155,9 +155,13 @@ export default function Lesson() {
           </p>
         ) : (
           <>
+            {/* v12 riga 540: titolo/periodo/riassunto sono SEMPRE renderizzati (anche
+                vuoti, `esc(s.period||"")`), non condizionati alla presenza del campo —
+                a differenza delle sezioni sotto (cronologia/punti chiave/domande), che
+                il v12 omette per intero se l'array è vuoto. */}
             <h2 className={styles.title}>{currentSpec.title}</h2>
-            {currentSpec.period && <p className={styles.period}>{currentSpec.period}</p>}
-            {currentSpec.summary && <p className={styles.summary}>{currentSpec.summary}</p>}
+            <p className={styles.period}>{currentSpec.period ?? ""}</p>
+            <p className={styles.summary}>{currentSpec.summary ?? ""}</p>
 
             {timeline.length > 0 && (
               <>
@@ -166,6 +170,11 @@ export default function Lesson() {
                   <button key={i} type="button" className={styles.card} onClick={() => void openLesson(i)}>
                     <strong>{fmtY(e.year)}</strong>
                     <span>{e.event}</span>
+                    {/* v12 riga 536: <span class="card-x">›</span> — chevron che indica
+                        che la voce è cliccabile, mancante nel porting. */}
+                    <span className={styles.cardChevron} aria-hidden="true">
+                      ›
+                    </span>
                   </button>
                 ))}
               </>
