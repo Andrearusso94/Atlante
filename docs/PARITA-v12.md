@@ -260,13 +260,15 @@ intenzionale (`lastDataNote` ridotto a stringa generica fissa). Il disclaimer di
 questo blocco appartiene alla **modale** e riguarda solo l'origine della lezione
 (IA vs curata a mano): nessuna sovrapposizione fra i due.
 
-Esito: parità completa, nessun gap. Test aggiunti in `Lesson.test.tsx`: con solo
-`context` popolato (caso curatedCard/fallback) le altre intestazioni non vengono
-renderizzate; con tutti i campi popolati le sezioni appaiono nell'ordine fisso del
-v12 e Cause/Conseguenze/Da chiedere alla classe sono effettivamente `<ul><li>`. La
-distinzione del disclaimer fallback/IA era già coperta dai test preesistenti
-("evento con detail curato" → "curata a mano.", "evento senza detail" → "redatta
-dall'IA…").
+Esito: parità completa, nessun gap. **Nessuna modifica a `Lesson.tsx`** (a differenza
+del Blocco 9, dove period/summary e il chevron avevano richiesto fix): il markup
+React a `Lesson.tsx:254-308` era già conforme a `renderFullLesson`. Qui sono stati
+aggiunti solo i test di regressione in `Lesson.test.tsx`: con solo `context` popolato
+(caso curatedCard/fallback) le altre intestazioni non vengono renderizzate; con tutti
+i campi popolati le sezioni appaiono nell'ordine fisso del v12 e Cause/Conseguenze/Da
+chiedere alla classe sono effettivamente `<ul><li>`. La distinzione del disclaimer
+fallback/IA era già coperta dai test preesistenti ("evento con detail curato" →
+"curata a mano.", "evento senza detail" → "redatta dall'IA…").
 
 ---
 
