@@ -21,8 +21,16 @@
   background: rgba(227, 172, 70, 0.08);
 }
 
+/* v12 riga 170: #quizBar è un overlay fisso indipendente, fuori da #toolBox (qui
+   .tools) — senza position:fixed la barra finiva dentro .tools (App.module.css),
+   in alto a sinistra invece che in alto al centro. */
 .bar {
   composes: glass from global;
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 14;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -105,6 +113,7 @@
    per la proiezione in aula (features/present/). */
 :global(body.present) .bar {
   width: 560px;
+  top: 26px;
 }
 
 :global(body.present) .question {

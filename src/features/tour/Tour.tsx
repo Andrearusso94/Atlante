@@ -1,16 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import {
-  endTour,
-  selectBordersOn,
-  selectPlagueActive,
-  selectTour,
-  setBordersOn,
-  setPlagueActive,
-  setTourIdx,
-  setTourPaused,
-  startTour,
-} from "../../store/modeSlice";
+import { endQuiz, endTour, selectTour, setTourIdx, setTourPaused, startTour } from "../../store/modeSlice";
 import { byName, SLIDE_MS, TOUR } from "../../data/peste";
 import styles from "./Tour.module.css";
 
@@ -21,6 +11,16 @@ export interface TourProps {
   /** Apre la card Instagram (features/igCard) per la tappa corrente — stesso prop
    * pattern di onFlyTo, l'istanza della card vive in App.tsx. */
   onOpenIgCard: (name: string) => void;
+  /** features/plague/ensurePlagueReady, legato a engine+dispatch+bordersOn in App.tsx —
+   * va atteso PRIMA di attivare il tour (v12 righe 1025-1027). */
+  onEnsurePlagueReady: () => Promise<boolean>;
+  /** Prende possesso di bordersOn/plagueActive se non già accesi (mutua esclusione
+   * Tour/Quiz, RICOGNIZIONE-v12.md §5) — implementato in App.tsx su plagueOwnership.ts,
+   * condiviso con Quiz: chi parte per primo possiede, chi subentra trova già posseduto. */
+  onAcquirePlague: () => void;
+  /** Rilascia bordersOn/plagueActive se posseduti da questa sessione (v12 li lascia
+   * accesi per sempre; qui si ripristina lo stato precedente — decisione presa). */
+  onReleasePlague: () => void;
 }
 
 // v12 (startTour/endTour/advanceSlide/scheduleSlide/tourGoRegion/updateTourBar). Qui
@@ -31,34 +31,31 @@ export interface TourProps {
 // nulla del tour, riceve solo flyTo via prop — setIdleSpinSuppressed/enablePlague/
 // setBorders restano cablati reattivamente in App.tsx a partire da modeSlice (blocco
 // 10): non li richiamiamo qui per non duplicare quella logica.
-export default function Tour({ onFlyTo, onOpenIgCard }: TourProps) {
+export default function Tour({
+  onFlyTo,
+  onOpenIgCard,
+  onEnsurePlagueReady,
+  onAcquirePlague,
+  onReleasePlague,
+}: TourProps) {
   const dispatch = useAppDispatch();
   const { active: tourActive, idx: tourIdx, paused: tourPaused } = useAppSelector(selectTour);
-  const bordersOn = useAppSelector(selectBordersOn);
-  const plagueActive = useAppSelector(selectPlagueActive);
+  const quizActive = useAppSelector((state) => state.mode.quizActive);
 
-  // v12 lasciava bordersOn/plagueActive accesi dopo il tour; qui invece "ripristina lo
-  // stato dei confini precedente" — quindi teniamo a mente se siamo stati noi ad
-  // accenderli, per spegnerli solo in quel caso all'uscita. Bookkeeping effimero della
-  // singola sessione di tour: non vive in Redux (sparisce con endTour), come
-  // origin/fallbackNotice in features/lesson/.
-  const ownedBordersRef = useRef(false);
-  const ownedPlagueRef = useRef(false);
-
-  function handleStart() {
+  async function handleStart() {
     if (tourActive) return;
-    ownedBordersRef.current = !bordersOn;
-    ownedPlagueRef.current = !plagueActive;
-    if (!bordersOn) dispatch(setBordersOn(true));
-    if (!plagueActive) dispatch(setPlagueActive(true));
+    // v12 riga 1023: avviare il tour chiude il quiz (esclusione reciproca) — il
+    // ripristino di bordersOn/plagueActive eventualmente posseduti dal quiz resta
+    // compito di plagueOwnership.ts (onAcquirePlague subito sotto), non di endQuiz qui.
+    if (quizActive) dispatch(endQuiz());
+    onAcquirePlague();
+    const ok = await onEnsurePlagueReady();
+    if (!ok) return;
     dispatch(startTour());
   }
 
   function handleExit() {
-    if (ownedPlagueRef.current) dispatch(setPlagueActive(false));
-    if (ownedBordersRef.current) dispatch(setBordersOn(false));
-    ownedPlagueRef.current = false;
-    ownedBordersRef.current = false;
+    onReleasePlague();
     dispatch(endTour());
   }
 
@@ -96,9 +93,22 @@ export default function Tour({ onFlyTo, onOpenIgCard }: TourProps) {
     return () => window.clearTimeout(timer);
   }, [tourActive, tourPaused, tourIdx]);
 
+  // v12 (Esc globale, riga 1103: `if(tourActive){endTour();return;}`) — qui come listener
+  // proprio del Tour, condizionato/staccato su tourActive (stesso pattern di Esc-per-modale
+  // in features/lesson/Lesson.tsx e features/igCard/IgCard.tsx). Mai insieme al Quiz: con
+  // l'esclusione reciproca sopra, al più uno dei due è attivo.
+  useEffect(() => {
+    if (!tourActive) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") handleExit();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [tourActive]);
+
   if (!tourActive) {
     return (
-      <button type="button" className={styles.launch} onClick={handleStart}>
+      <button type="button" className={styles.launch} onClick={() => void handleStart()}>
         🎬 Tour guidato
       </button>
     );

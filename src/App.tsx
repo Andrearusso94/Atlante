@@ -4,8 +4,10 @@ import { GlobeEngine } from "./engine/GlobeEngine";
 import type { TickPayload } from "./engine/loop";
 import { FALLBACK } from "./data/fallback";
 import { selectCurrentSpec, setCurrentSpec } from "./store/specSlice";
-import { selectBordersOn, selectPlagueActive, selectTheme } from "./store/modeSlice";
+import { selectBordersOn, selectPlagueActive, selectTheme, setBordersOn, setPlagueActive } from "./store/modeSlice";
 import { routePlagueClick } from "./plagueClickRoute";
+import { acquirePlagueOwnership, createPlagueOwnershipState, releasePlagueOwnership } from "./plagueOwnership";
+import { ensurePlagueReady } from "./features/plague/ensurePlagueReady";
 import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
 import Controls from "./features/controls/Controls";
@@ -41,6 +43,37 @@ export default function App() {
   // v12: testo di #bEra. Come progress/playing/anno (onTick), arriva dal motore via
   // callback e resta in stato locale React — mai in Redux (RICOGNIZIONE-v12.md §4).
   const [bordersEra, setBordersEra] = useState("");
+  // Possesso condiviso di bordersOn/plagueActive fra Tour e Quiz (plagueOwnership.ts) —
+  // UNA sola istanza qui perché sono in esclusione reciproca (blocco mutua esclusione):
+  // chi parte per primo possiede, chi subentra trova già posseduto, chi esce per ultimo
+  // rilascia. v12 non aveva questo concetto (li lasciava accesi per sempre).
+  const plagueOwnershipRef = useRef(createPlagueOwnershipState());
+
+  // Prende possesso di bordersOn/plagueActive se non già accesi, prima che Tour/Quiz
+  // chiamino ensurePlagueReady (che accende bordersOn da solo se serve, vedi sotto) —
+  // qui si accende subito SOLO plagueActive, l'unico flag che nessun'altra funzione
+  // attiva da sé.
+  function acquirePlague() {
+    const { claimedPlague } = acquirePlagueOwnership(plagueOwnershipRef.current, { bordersOn, plagueActive });
+    if (claimedPlague) dispatch(setPlagueActive(true));
+  }
+
+  // Rilascia bordersOn/plagueActive se posseduti da questa sessione (Tour o Quiz, a
+  // chiusura) — v12 li lasciava accesi per sempre; qui si ripristina lo stato precedente.
+  function releasePlague() {
+    const released = releasePlagueOwnership(plagueOwnershipRef.current);
+    if (released.plague) dispatch(setPlagueActive(false));
+    if (released.borders) dispatch(setBordersOn(false));
+  }
+
+  // features/plague/ensurePlagueReady, legata all'istanza di GlobeEngine che vive qui —
+  // stesso prop pattern di onFlyTo/onSetPlaying. `bordersOn` è quello dell'ultimo render:
+  // niente fra acquirePlague() e questa chiamata dispatcha bordersOn, quindi resta accurato.
+  async function handleEnsurePlagueReady(): Promise<boolean> {
+    const engine = engineRef.current;
+    if (!engine) return false;
+    return ensurePlagueReady({ engine, dispatch, bordersOn });
+  }
 
   // Apre la card Instagram (features/igCard) per la regione `name` — chiamata sia dal
   // coordinatore del click sul globo qui sotto, sia dalle tappe del Tour (prop
@@ -138,8 +171,17 @@ export default function App() {
         <Tour
           onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)}
           onOpenIgCard={openIgCard}
+          onEnsurePlagueReady={handleEnsurePlagueReady}
+          onAcquirePlague={acquirePlague}
+          onReleasePlague={releasePlague}
         />
-        <Quiz click={quizClick} onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)} />
+        <Quiz
+          click={quizClick}
+          onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)}
+          onEnsurePlagueReady={handleEnsurePlagueReady}
+          onAcquirePlague={acquirePlague}
+          onReleasePlague={releasePlague}
+        />
       </div>
       <IgCard open={igCardOpen} />
     </div>

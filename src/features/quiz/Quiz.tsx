@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import {
-  advanceQuiz,
-  answerQuiz,
-  endQuiz,
-  selectBordersOn,
-  selectPlagueActive,
-  selectQuiz,
-  setBordersOn,
-  setPlagueActive,
-  startQuiz,
-} from "../../store/modeSlice";
+import { advanceQuiz, answerQuiz, endQuiz, endTour, selectQuiz, startQuiz } from "../../store/modeSlice";
 import { byName, QUIZ } from "../../data/peste";
 import {
   buildQuizOrder,
@@ -37,23 +27,30 @@ export interface QuizProps {
   onFlyTo: (lat: number, lon: number) => void;
   /** Ultimo tap utile arrivato dal coordinatore; null finché non ne arriva nessuno. */
   click: QuizClick | null;
+  /** features/plague/ensurePlagueReady, legato a engine+dispatch+bordersOn in App.tsx —
+   * va atteso PRIMA di attivare il quiz (v12 righe 1066-1068). */
+  onEnsurePlagueReady: () => Promise<boolean>;
+  /** Prende possesso di bordersOn/plagueActive se non già accesi (mutua esclusione
+   * Tour/Quiz, RICOGNIZIONE-v12.md §6) — implementato in App.tsx su plagueOwnership.ts,
+   * condiviso con Tour: chi parte per primo possiede, chi subentra trova già posseduto. */
+  onAcquirePlague: () => void;
+  /** Rilascia bordersOn/plagueActive se posseduti da questa sessione (v12 li lascia
+   * accesi per sempre; qui si ripristina lo stato precedente — decisione presa). */
+  onReleasePlague: () => void;
 }
 
 // v12 (startQuiz/quizAnswer/quizEnd/quizExit). quizActive/quizScore/quizPos/quizOrder
 // vivono in modeSlice (blocco 9): qui dispatchiamo le transizioni, non duplichiamo lo
-// stato. bordersOn/plagueActive forzati e ripristinati come in features/tour
-// (RICOGNIZIONE-v12.md §5): stesso bookkeeping ownedBordersRef/ownedPlagueRef, non
-// Redux perché effimero alla singola sessione di quiz. Il confronto vero (regione
-// cliccata vs risposta attesa, punteggio, messaggi) è puro e vive in ./quizLogic,
-// testabile senza montare il globo.
-export default function Quiz({ onFlyTo, click }: QuizProps) {
+// stato. bordersOn/plagueActive forzati e ripristinati tramite plagueOwnership.ts
+// (condiviso con features/tour, RICOGNIZIONE-v12.md §5/§6), non più bookkeeping locale:
+// serve a far convivere correttamente l'esclusione reciproca col ripristino allo stato
+// precedente. Il confronto vero (regione cliccata vs risposta attesa, punteggio,
+// messaggi) è puro e vive in ./quizLogic, testabile senza montare il globo.
+export default function Quiz({ onFlyTo, click, onEnsurePlagueReady, onAcquirePlague, onReleasePlague }: QuizProps) {
   const dispatch = useAppDispatch();
   const { active: quizActive, score: quizScore, pos: quizPos, order: quizOrder } = useAppSelector(selectQuiz);
-  const bordersOn = useAppSelector(selectBordersOn);
-  const plagueActive = useAppSelector(selectPlagueActive);
+  const tourActive = useAppSelector((state) => state.mode.tourActive);
 
-  const ownedBordersRef = useRef(false);
-  const ownedPlagueRef = useRef(false);
   // v12 `quizLock`: impedisce di contare un secondo tap arrivato durante la finestra di
   // feedback della risposta precedente. Bookkeeping effimero, non vive in Redux.
   const lockRef = useRef(false);
@@ -70,27 +67,40 @@ export default function Quiz({ onFlyTo, click }: QuizProps) {
     };
   }, []);
 
-  function handleStart() {
+  async function handleStart() {
     if (quizActive) return;
-    ownedBordersRef.current = !bordersOn;
-    ownedPlagueRef.current = !plagueActive;
-    if (!bordersOn) dispatch(setBordersOn(true));
-    if (!plagueActive) dispatch(setPlagueActive(true));
+    // v12 riga 1064: avviare il quiz chiude il tour (esclusione reciproca) — il
+    // ripristino di bordersOn/plagueActive eventualmente posseduti dal tour resta
+    // compito di plagueOwnership.ts (onAcquirePlague subito sotto), non di endTour qui.
+    if (tourActive) dispatch(endTour());
+    onAcquirePlague();
     lockRef.current = false;
     setFeedback(null);
+    const ok = await onEnsurePlagueReady();
+    if (!ok) return;
     dispatch(startQuiz(buildQuizOrder(QUIZ.length)));
     onFlyTo(OVERVIEW[0], OVERVIEW[1]);
   }
 
   function handleExit() {
-    if (ownedPlagueRef.current) dispatch(setPlagueActive(false));
-    if (ownedBordersRef.current) dispatch(setBordersOn(false));
-    ownedPlagueRef.current = false;
-    ownedBordersRef.current = false;
+    onReleasePlague();
     lockRef.current = false;
     setFeedback(null);
     dispatch(endQuiz());
   }
+
+  // v12 (Esc globale, riga 1102: `if(quizActive...){quizExit();return;}`) — qui come
+  // listener proprio del Quiz, condizionato/staccato su quizActive (stesso pattern di
+  // Esc-per-modale in features/lesson/Lesson.tsx e features/igCard/IgCard.tsx). Mai
+  // insieme al Tour: con l'esclusione reciproca sopra, al più uno dei due è attivo.
+  useEffect(() => {
+    if (!quizActive) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") handleExit();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [quizActive]);
 
   // v12 (quizAnswer, righe 1072-1083): confronta la regione cliccata con la risposta
   // attesa, aggiorna SUBITO il punteggio e mostra il feedback; l'avanzamento alla
@@ -136,7 +146,7 @@ export default function Quiz({ onFlyTo, click }: QuizProps) {
 
   if (!quizActive) {
     return (
-      <button type="button" className={styles.launch} onClick={handleStart}>
+      <button type="button" className={styles.launch} onClick={() => void handleStart()}>
         ❓ Quiz
       </button>
     );

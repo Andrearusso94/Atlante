@@ -155,6 +155,16 @@ export class GlobeEngine {
     this.idleSpinSuppressed = on;
   }
 
+  /** Stato VERO del layer cliccabile della Peste (engine/plague.ts: `plagueState.active`)
+   * — a differenza di `modeSlice.plagueActive` (l'INTENTO di Tour/Quiz), questo riflette
+   * se il layer è stato effettivamente montato (richiede confini caricati sul 1300).
+   * v12: `ensurePlagueReady` leggeva la stessa variabile globale `plagueActive` sia per
+   * la guardia iniziale sia per il valore di ritorno (righe 977, 983) — vedi
+   * features/plague/ensurePlagueReady.ts. */
+  isPlagueActive(): boolean {
+    return this.plagueState.active;
+  }
+
   /** Risolve un punto schermo nella regione Peste cliccata, se c'è (engine/plague.ts:
    * resolvePlagueRegion) — ritorna solo il `name`, non l'intero PlagueRegion: è quanto
    * basta al chiamante (`byName` in data/peste.ts resta l'unico modo per i dettagli). */

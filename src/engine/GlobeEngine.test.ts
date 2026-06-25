@@ -174,6 +174,22 @@ describe("GlobeEngine — Peste (engine/plague.ts collegato)", () => {
     expect(engine.pickPlagueRegionAt(1024 / 2, 768 / 2)).toBe("France");
   });
 
+  it("isPlagueActive riflette lo stato VERO del layer (plagueState.active), non un intento esterno", () => {
+    getCachedGeoMock.mockReturnValue(FRANCE_FC);
+    const engine = new GlobeEngine();
+    injectFakeGlobe(engine);
+    const borders = readBordersState(engine);
+    borders.on = true;
+    borders.file = "world_1300.geojson";
+    expect(engine.isPlagueActive()).toBe(false);
+
+    engine.enablePlague(true);
+    expect(engine.isPlagueActive()).toBe(true);
+
+    engine.enablePlague(false);
+    expect(engine.isPlagueActive()).toBe(false);
+  });
+
   it("enablePlague(true) non fa nulla se i confini non sono sul 1300 (syncPlague decide da solo)", () => {
     getCachedGeoMock.mockReturnValue(FRANCE_FC);
     const engine = new GlobeEngine();

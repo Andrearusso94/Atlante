@@ -4,22 +4,63 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
-import modeReducer, { setBordersOn, setPlagueActive } from "../../store/modeSlice";
+import modeReducer, { setBordersOn, setPlagueActive, startQuiz } from "../../store/modeSlice";
+import { acquirePlagueOwnership, createPlagueOwnershipState, releasePlagueOwnership } from "../../plagueOwnership";
 import { byName, SLIDE_MS, TOUR } from "../../data/peste";
 import Tour from "./Tour";
 
-function renderTour(preload?: { bordersOn?: boolean; plagueActive?: boolean }) {
+/** Simula il cablaggio reale di App.tsx (acquirePlague/releasePlague su
+ * plagueOwnership.ts, ensurePlagueReady che accende bordersOn se serve) ma sullo store
+ * di test, senza GlobeEngine — così le asserzioni su bordersOn/plagueActive restano
+ * significative senza dover montare three.js. `ensurePlagueReadyResult` permette ai
+ * test di simulare un fallimento di rete (v12: `ensurePlagueReady` ritorna `false`). */
+function renderTour(preload?: {
+  bordersOn?: boolean;
+  plagueActive?: boolean;
+  quizActive?: boolean;
+  ensurePlagueReadyResult?: boolean;
+}) {
   const store = configureStore({ reducer: { mode: modeReducer } });
   if (preload?.bordersOn) store.dispatch(setBordersOn(true));
   if (preload?.plagueActive) store.dispatch(setPlagueActive(true));
+  if (preload?.quizActive) store.dispatch(startQuiz([0]));
   const onFlyTo = vi.fn();
   const onOpenIgCard = vi.fn();
+  const ownership = createPlagueOwnershipState();
+
+  const onAcquirePlague = vi.fn(() => {
+    const { claimedPlague } = acquirePlagueOwnership(ownership, store.getState().mode);
+    if (claimedPlague) store.dispatch(setPlagueActive(true));
+  });
+  const onReleasePlague = vi.fn(() => {
+    const released = releasePlagueOwnership(ownership);
+    if (released.plague) store.dispatch(setPlagueActive(false));
+    if (released.borders) store.dispatch(setBordersOn(false));
+  });
+  const onEnsurePlagueReady = vi.fn(async () => {
+    if (preload?.ensurePlagueReadyResult === false) return false;
+    if (!store.getState().mode.bordersOn) store.dispatch(setBordersOn(true));
+    return true;
+  });
+
   render(
     <Provider store={store}>
-      <Tour onFlyTo={onFlyTo} onOpenIgCard={onOpenIgCard} />
+      <Tour
+        onFlyTo={onFlyTo}
+        onOpenIgCard={onOpenIgCard}
+        onEnsurePlagueReady={onEnsurePlagueReady}
+        onAcquirePlague={onAcquirePlague}
+        onReleasePlague={onReleasePlague}
+      />
     </Provider>,
   );
-  return { store, onFlyTo, onOpenIgCard };
+  return { store, onFlyTo, onOpenIgCard, onEnsurePlagueReady, onAcquirePlague, onReleasePlague };
+}
+
+async function clickStart() {
+  await act(async () => {
+    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+  });
 }
 
 function advance(ms: number) {
@@ -44,11 +85,12 @@ describe("Tour", () => {
     expect(onFlyTo).not.toHaveBeenCalled();
   });
 
-  it("avvio: attiva tour, forza confini+peste (se non già attivi), vola sulla prima regione e apre la sua card", () => {
-    const { store, onFlyTo, onOpenIgCard } = renderTour();
+  it("avvio: attende ensurePlagueReady, poi attiva il tour, forza confini+peste (se non già attivi), vola sulla prima regione e apre la sua card", async () => {
+    const { store, onFlyTo, onOpenIgCard, onEnsurePlagueReady } = renderTour();
 
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
 
+    expect(onEnsurePlagueReady).toHaveBeenCalledTimes(1);
     expect(store.getState().mode).toMatchObject({
       tourActive: true,
       tourIdx: 0,
@@ -63,9 +105,42 @@ describe("Tour", () => {
     screen.getByText(`Tappa 1 / ${TOUR.length}`);
   });
 
-  it("avanza automaticamente ogni SLIDE_MS alla tappa successiva, volandoci e aprendo la sua card", () => {
+  it("se ensurePlagueReady fallisce, non attiva il tour (v12: niente mappa del 1300, niente tour)", async () => {
+    const { store, onFlyTo } = renderTour({ ensurePlagueReadyResult: false });
+
+    await clickStart();
+
+    expect(store.getState().mode.tourActive).toBe(false);
+    expect(onFlyTo).not.toHaveBeenCalled();
+    screen.getByText("🎬 Tour guidato");
+  });
+
+  it("esclusione reciproca: avviare il tour mentre il quiz è attivo lo chiude", async () => {
+    const { store } = renderTour({ quizActive: true });
+
+    await clickStart();
+
+    expect(store.getState().mode.quizActive).toBe(false);
+    expect(store.getState().mode.tourActive).toBe(true);
+  });
+
+  it("Esc chiude il tour (v12 riga 1103) e ripristina confini/peste come l'uscita manuale", async () => {
+    const { store } = renderTour();
+    await clickStart();
+    expect(store.getState().mode.tourActive).toBe(true);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(store.getState().mode).toMatchObject({
+      tourActive: false,
+      bordersOn: false,
+      plagueActive: false,
+    });
+  });
+
+  it("avanza automaticamente ogni SLIDE_MS alla tappa successiva, volandoci e aprendo la sua card", async () => {
     const { store, onFlyTo, onOpenIgCard } = renderTour();
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
     onFlyTo.mockClear();
     onOpenIgCard.mockClear();
 
@@ -77,9 +152,9 @@ describe("Tour", () => {
     expect(onFlyTo).toHaveBeenCalledWith(england.ll[0], england.ll[1]);
   });
 
-  it("pausa ferma il timer; la ripresa lo riavvia con SLIDE_MS pieno (porta fedele del v12)", () => {
+  it("pausa ferma il timer; la ripresa lo riavvia con SLIDE_MS pieno (porta fedele del v12)", async () => {
     const { store } = renderTour();
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
 
     fireEvent.click(screen.getByLabelText("Play/Pausa"));
     expect(store.getState().mode.tourPaused).toBe(true);
@@ -97,9 +172,9 @@ describe("Tour", () => {
     expect(store.getState().mode.tourIdx).toBe(1);
   });
 
-  it("tappa successiva/precedente naviga con wrap circolare e toglie la pausa", () => {
+  it("tappa successiva/precedente naviga con wrap circolare e toglie la pausa", async () => {
     const { store } = renderTour();
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
 
     fireEvent.click(screen.getByLabelText("Tappa precedente"));
     expect(store.getState().mode.tourIdx).toBe(TOUR.length - 1);
@@ -109,9 +184,9 @@ describe("Tour", () => {
     expect(store.getState().mode.tourIdx).toBe(0);
   });
 
-  it("alla fine del tour esce da sola e ripristina confini/peste se li aveva accesi lei", () => {
+  it("alla fine del tour esce da sola e ripristina confini/peste se li aveva accesi lei", async () => {
     const { store } = renderTour();
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
 
     for (let i = 0; i < TOUR.length - 1; i++) advance(SLIDE_MS);
     expect(store.getState().mode.tourIdx).toBe(TOUR.length - 1);
@@ -126,9 +201,9 @@ describe("Tour", () => {
     });
   });
 
-  it("non disattiva confini/peste all'uscita se erano già attivi prima del tour", () => {
+  it("non disattiva confini/peste all'uscita se erano già attivi prima del tour", async () => {
     const { store } = renderTour({ bordersOn: true, plagueActive: true });
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
 
     fireEvent.click(screen.getByLabelText("Esci dal tour"));
 
@@ -139,9 +214,9 @@ describe("Tour", () => {
     });
   });
 
-  it("l'uscita manuale ferma il timer: il tempo che passa dopo non muove più nulla", () => {
+  it("l'uscita manuale ferma il timer: il tempo che passa dopo non muove più nulla", async () => {
     const { store, onFlyTo } = renderTour();
-    fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    await clickStart();
     fireEvent.click(screen.getByLabelText("Esci dal tour"));
     onFlyTo.mockClear();
 

@@ -115,17 +115,20 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 | 1006 | "Tappa N / 9" + etichetta regione | `Tour.tsx:136-139` | ✓ |
 | 145-167, 295-304 | CSS `.tool-b`/`#tourBar`/`.tour-nav`/`.tour-label`/`.tour-step`/`.tour-x` (colori, dimensioni) | `Tour.module.css` | ✓ 1:1 (manca solo il posizionamento, vedi ✗5) |
 
+**✓ corretto in questo blocco:**
+
+1. ~~`ensurePlagueReady` non è mai stata implementata.~~ Creata `features/plague/ensurePlagueReady.ts` (porting fedele delle righe 976-984, condivisa da Tour e Quiz come pianificato in RICOGNIZIONE-v12.md §1): carica `FALLBACK.peste` come scena corrente (`dispatch(setCurrentSpec)` + `engine.renderScene`), ferma un eventuale play, accende `bordersOn` se spento e forza i confini al 1349 (`engine.setYear(1349)`). Guardia iniziale e valore di ritorno fedeli al v12 — legge/ritorna lo stato VERO del layer (`GlobeEngine.isPlagueActive()`, nuovo metodo su `plagueState.active`), non un `true` fisso. `Tour.tsx handleStart`/`Quiz.tsx handleStart` la attendono ora PRIMA di attivarsi.
+2. ~~Nessuna esclusione reciproca col Quiz.~~ `Tour.tsx handleStart` dispatcha `endQuiz()` se il quiz è attivo (e viceversa in Quiz.tsx, Blocco 6). Il possesso di `bordersOn`/`plagueActive` (per il ripristino allo stato precedente, vedi sotto) non è più locale a ciascun componente: `plagueOwnership.ts` (nuovo, top-level come `plagueClickRoute.ts`) lo condivide fra Tour e Quiz tramite App.tsx, così il passaggio di mano da un tour/quiz forzatamente chiuso a quello che parte non perde il possesso da ripristinare a fine sessione.
+3. ~~Esc non chiude il tour.~~ `Tour.tsx` ha ora un listener `keydown` proprio (condizionato/staccato su `tourActive`, stesso pattern di Esc-per-modale già usato in `Lesson.tsx`/`IgCard.tsx`) che chiama `handleExit()`.
+5. ~~Posizione della barra attiva sbagliata.~~ `Tour.module.css .bar` ha ora `position:fixed;bottom:190px;left:50%;transform:translateX(-50%);z-index:60` (v12 riga 157): la barra non finisce più dentro `.tools`. Stesso fix nel Quiz (Blocco 6 ✓5).
+
 **✗ mancante:**
 
-1. **`ensurePlagueReady` non è mai stata implementata.** RICOGNIZIONE-v12.md §1 la pianificava come `features/plague/ensurePlagueReady.ts`, condivisa da Tour e Quiz: carica `FALLBACK.peste` come scena corrente, mostra la lezione, ferma un'eventuale animazione, forza i confini all'anno 1349. **Non esiste nessun file `features/plague/` né alcuna chiamata a `ensurePlagueReady` in tutto `src/`** (verificato per grep). `Tour.tsx handleStart` si limita ad accendere `bordersOn`/`plagueActive` sull'anno e sulla scena CORRENTI, qualunque essi siano — non sull'anno 1349 né su `FALLBACK.peste`. Se l'utente non ha già caricato la Peste a mano, il layer cliccabile potrebbe non comparire affatto e il pannello lezione resta su un'altra scena. È la lacuna più grande di questa tranche: condivisa identica dal Quiz (vedi Blocco 6).
-2. **Nessuna esclusione reciproca col Quiz.** v12 `startTour`: `if(quizActive||quizBar.classList.contains("on"))quizExit();` (riga 1023). `Tour.tsx handleStart` non dispatcha mai `endQuiz()`: avviare il tour mentre il quiz è attivo li lascia entrambi attivi insieme (e viceversa, Blocco 6 ✗2).
-3. **Esc non chiude il tour.** v12, terza catena Esc (righe 1099-1106): `if(tourActive){endTour();return;}`. Nessun componente React ascolta Esc per `endTour` (verificato per grep su tutto `src/features/`).
 4. **Ritardo di 680ms prima dell'apertura della card assente.** v12 `tourGoRegion` (riga 1008-1014): vola sulla regione, *poi* apre la card Instagram dopo un `setTimeout(...,680)` — il tempo per la camera di arrivare. `Tour.tsx:78-84` chiama `onFlyTo` e `onOpenIgCard` nello stesso istante: la card appare subito, non quando la camera è arrivata.
-5. **Posizione della barra attiva sbagliata.** v12 `#tourBar` è un overlay fisso indipendente (`position:fixed;bottom:190px;left:50%`, riga 157), separato dal `#toolBox` dei lanciatori. `Tour.module.css .bar` non ha alcun `position`: quando il tour è attivo, la barra finisce dentro `.tools` (il contenitore fisso a sinistra, `top:50%;left:18px` — `App.module.css`), non in basso al centro. Stesso problema nel Quiz (Blocco 6 ✗5).
 
 **⚠ differenza non pre-approvata, ma documentata nel codice (da confermare):**
 
-- v12 lascia `bordersOn`/Peste accesi per sempre dopo il tour; `Tour.tsx:40-44` li ripristina invece allo stato precedente all'ingresso (bookkeeping `ownedBordersRef`/`ownedPlagueRef`). Miglioramento deliberato e commentato, non sul brief originale.
+- v12 lascia `bordersOn`/Peste accesi per sempre dopo il tour; `Tour.tsx handleExit` (via `onReleasePlague`, `plagueOwnership.ts`) li ripristina invece allo stato precedente all'ingresso. Miglioramento deliberato e commentato, non sul brief originale.
 - v12 avanza slide-per-slide DENTRO la card (ogni `SLIDE_MS`) e passa alla regione successiva solo a card esaurita; `Tour.tsx:26-33` avanza invece sempre di regione ogni `SLIDE_MS`, lasciando la navigazione fra le slide della card solo manuale. Differenza deliberata e commentata.
 
 ---
@@ -147,13 +150,16 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 
 4. ~~Punteggio/posizione avanzano troppo presto.~~ v12 incrementa `quizPos` solo *dopo* i 1650ms di feedback, dentro il `setTimeout` di `quizAnswer` (righe 1080-1083) — punteggio e feedback restano invece immediati (righe 1075-1079). `modeSlice.answerQuiz` è stato diviso in due reducer: `answerQuiz` aggiorna solo `quizScore` (immediato, come nel v12), il nuovo `advanceQuiz` aggiorna solo `quizPos` ed è dispatchato in `Quiz.tsx` dentro il `setTimeout` di `FEEDBACK_MS`, non più insieme al click. Durante la finestra di feedback la domanda a video resta quella appena risposta, non la successiva. Test aggiornati in `modeSlice.test.ts` e `Quiz.test.tsx` per coprire esplicitamente il nuovo timing.
 
+**✓ corretto in questo blocco:**
+
+1. ~~`ensurePlagueReady` non è mai stata implementata~~ — stesso fix del Tour (Blocco 5 ✓1): `Quiz.tsx handleStart` la attende ora prima di attivarsi.
+2. ~~Nessuna esclusione reciproca col Tour.~~ `Quiz.tsx handleStart` dispatcha `endTour()` se il tour è attivo — stesso meccanismo di possesso condiviso (`plagueOwnership.ts`) del Tour (Blocco 5 ✓2).
+3. ~~Esc non chiude il quiz~~ — stesso fix del Tour (Blocco 5 ✓3): listener `keydown` proprio condizionato su `quizActive`.
+5. ~~Posizione della barra attiva sbagliata~~ — stesso fix del Tour (Blocco 5 ✓5): `Quiz.module.css .bar` ha ora `position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:14` (v12 riga 170), incluso l'override `body.present` (`top:26px`, v12 riga 196).
+
 **✗ mancante:**
 
-1. **`ensurePlagueReady` non è mai stata implementata** — stesso gap esatto del Tour (Blocco 5 ✗1): `Quiz.tsx handleStart` accende solo `bordersOn`/`plagueActive`, non carica mai `FALLBACK.peste` né forza l'anno 1349.
-2. **Nessuna esclusione reciproca col Tour.** v12 `startQuiz`: `if(tourActive)endTour();` (riga 1064). `Quiz.tsx handleStart` non dispatcha mai `endTour()`.
-3. **Esc non chiude il quiz** — stesso gap del Tour (terza catena Esc, riga 1102: `if(quizActive||quizBar.classList.contains("on")){quizExit();return;}`).
-5. **Posizione della barra attiva sbagliata** — stesso problema del Tour (Blocco 5 ✗5): `Quiz.module.css .bar` non ha `position:fixed;top:18px;left:50%` (v12 riga 170).
-6. **Testo "Preparo la mappa…" assente** — conseguenza diretta del punto 1: non c'è alcun caricamento asincrono da segnalare finché `ensurePlagueReady` non esiste.
+6. **Testo "Preparo la mappa…" assente.** v12 `startQuiz` (riga 1065) mostra questo testo nella barra mentre `ensurePlagueReady` è in corso. Non riprodotto: blocco successivo (fuori scope qui insieme a `body.touring`/animazioni modale/680ms del Tour).
 
 ---
 
