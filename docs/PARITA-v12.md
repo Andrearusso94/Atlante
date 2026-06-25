@@ -184,8 +184,37 @@ click sul backdrop, Esc, focus, navigazione/swipe della card, CSS.
 
 ---
 
+## Blocco 8 — Presentazione (`setPresent`/`presentBtn`, modalità LIM) — TRANCHE 3
+
+Modulo `features/present/` esistente da prima di questo blocco, mai sottoposto ad audit
+fino ad ora — qui si confronta riga per riga con v12 righe 185-201 (CSS) e 987-994/1105
+(JS), non un porting da zero.
+
+| v12 (righe) | Comportamento | Implementazione React | Stato |
+|---|---|---|---|
+| 987-993 | `setPresent(on)`: `body.present`, bottone `.act`, testo "Presentazione"/"Esci" | `Present.tsx` — `body.classList.toggle`, `aria-pressed`, testo del bottone | ✓ |
+| 185-186 | `#head/#ctrlR/#lesson/#aiBar` → `opacity:0;pointer-events:none`, PERMANENTE (nessun hover-reveal) | `.chrome` (`Present.module.css`), composta da `App.module.css .head`, `Controls.module.css .panel`, `Lesson.module.css .panel`, `Generator.module.css .panel` | ✓ verificato: nessuna regola `:hover` su `.chrome`/`body.present` in tutto `src` (grep) |
+| 191-195 | `#igCard` 460px; `.ig-name` 18px, `.ig-capt` 19px, `.ig-text` 15.5px/1.7, `.ig-foot` 11.5px | `IgCard.module.css` righe 273-294 | ✓ 1:1 |
+| 196 | `#quizBar` 560px, `top:26px` (override del `top:18px` base cablato nel blocco Tour/Quiz precedente) | `Quiz.module.css .bar` | ✓ — verificato che il valore base (`top:18px`) non sia stato toccato |
+| 196-198 | `.quiz-q` 19px, `.quiz-fx` 14.5px, `.tour-label` 17px, `#curYear` 26px | `Quiz.module.css`, `Tour.module.css`, `Timeline.module.css` | ✓ 1:1 |
+
+**✓ corretto in questo blocco:**
+
+1. **`#toolBox` non si riposizionava in presentazione.** v12 riga 188: `body.present #toolBox{left:50%;top:auto;transform:translateX(-50%);bottom:20px;flex-direction:row;width:auto;align-items:center;}` — nessuna regola equivalente esisteva per `.tools` (ex `#toolBox`, contenitore di Presentazione/Tour/Quiz): il box restava nella colonna verticale a sinistra anche in presentazione. Aggiunta `:global(body.present) .tools{...}` in `App.module.css`, valori identici al v12.
+2. **Esc usciva dalla presentazione anche con tour o quiz attivi insieme — priorità violata.** v12 (righe 1100-1106): la catena Esc dà sempre precedenza a quiz/tour su "esci dalla presentazione" (`if(quizActive...)...return; if(tourActive)...return; ...; if(presenting)setPresent(false)`). `Present.tsx` aveva un listener Esc **indipendente**, che chiamava `setPresent(false)` ogni volta che `presenting` era vero, senza alcuna conoscenza di tour/quiz — con tour (o quiz) attivo insieme a presenting, Esc chiudeva *entrambi* nello stesso evento, invece di chiudere solo il tour/quiz. Corretto leggendo `tourActive`/`quizActive` da `modeSlice` e ignorando l'Esc quando uno dei due è vero (Tour.tsx/Quiz.tsx restano indipendenti e non toccati: ognuno legge lo stato del proprio render precedente sullo stesso evento, quindi l'ordine di registrazione dei tre listener non altera il risultato). Test aggiunti in `Present.test.tsx` per i due casi (tour attivo, quiz attivo) e per il ritorno alla normalità una volta finiti.
+
+**⚠ discrepanza fra il brief di questo blocco e il v12 reale (verificata via grep sul markup originale, righe 287-291):**
+
+- Il brief descriveva il punto 2 come "le label testuali dei bottoni (`.tool-h`) si nascondono → restano solo le icone". Nel v12 reale, `.tool-h` è **esclusivamente** l'header di sezione `<div class="tool-h">Aula</div>` (riga 288) — non le label dentro i singoli bottoni (`<span class="tb-i">` per l'icona + uno `<span>` senza classe per il testo, dentro `.tool-b`). `body.present #toolBox .tool-h{display:none}` nasconde solo "Aula"; le scritte "Presentazione"/"Tour guidato"/"Quiz" restano visibili in presentazione anche nel v12. Implementato fedele al v12 verificato (solo il riposizionamento del box, punto 1 sopra) — nessuna icona-senza-testo introdotta.
+
+**✗ mancante (gap noto, non risolto in questo blocco):**
+
+3. **Priorità Esc, terzo gradino (card Instagram aperta "da sola").** v12 riga 1104: `if(igOverlay.classList.contains("on"))return;` — se la card è aperta fuori da un tour, Esc la chiude (gestita dal suo stesso handler) e **non** deve anche far uscire dalla presentazione nello stesso evento (un secondo Esc, a card già chiusa, uscirebbe poi normalmente). `Present.tsx` non ha modo di sapere se `IgCard` è visibile: quello stato è locale al componente (`useState`), non in Redux né altrimenti condiviso — leggerlo richiederebbe di modificare `features/igCard/IgCard.tsx`, fuori dal blocco isolato di questa Tranche. Risultato osservabile attuale: con la card IG aperta da sola e presenting attivo, Esc chiude la card **e** esce dalla presentazione nello stesso evento, invece di chiudere solo la card. Edge case minore (non menzionato con un esempio esplicito nel brief, a differenza del caso tour/quiz) — da affrontare in un blocco dedicato a IgCard se necessario.
+
+---
+
 ## Blocchi non ancora passati in rassegna
 
-Nessuno — Tour/Quiz/Timeline erano gli ultimi tre elencati. Eventuali sezioni del v12
-non ancora confrontate (se ce ne sono) vanno individuate con una nuova lettura integrale
-del file di riferimento.
+Nessuno — Tour/Quiz/Timeline/Presentazione erano gli ultimi elencati. Eventuali sezioni
+del v12 non ancora confrontate (se ce ne sono) vanno individuate con una nuova lettura
+integrale del file di riferimento.

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
+import { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
-import modeReducer from "../../store/modeSlice";
+import modeReducer, { endTour, startQuiz, startTour } from "../../store/modeSlice";
 import Present from "./Present";
 
 function renderPresent() {
@@ -68,5 +69,45 @@ describe("Present", () => {
 
     expect(store.getState().mode.present).toBe(false);
     expect(document.body.classList.contains("present")).toBe(false);
+  });
+
+  // v12 (catena Esc righe 1100-1106): quiz/tour hanno la precedenza su "esci dalla
+  // presentazione" — con tour attivo E presentazione attiva insieme, Esc deve chiudere
+  // solo il tour (Tour.tsx, non toccato qui), non la presentazione. Verificato a livello
+  // di Present.tsx isolato: con tourActive vero nello store, il SUO listener non deve
+  // dispatchare setPresent(false) né rimuovere body.present.
+  it("Esc con tour attivo NON esce dalla presentazione (il tour ha la precedenza, v12 righe 1100-1103)", () => {
+    const store = renderPresent();
+    store.dispatch(startTour());
+    fireEvent.click(screen.getByRole("button", { name: "🖥 Presentazione" }));
+    expect(store.getState().mode.present).toBe(true);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(store.getState().mode.present).toBe(true);
+    expect(document.body.classList.contains("present")).toBe(true);
+  });
+
+  it("Esc con quiz attivo NON esce dalla presentazione (il quiz ha la precedenza, v12 riga 1102)", () => {
+    const store = renderPresent();
+    store.dispatch(startQuiz([0]));
+    fireEvent.click(screen.getByRole("button", { name: "🖥 Presentazione" }));
+    expect(store.getState().mode.present).toBe(true);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(store.getState().mode.present).toBe(true);
+    expect(document.body.classList.contains("present")).toBe(true);
+  });
+
+  it("una volta finiti tour/quiz, Esc torna a uscire normalmente dalla presentazione", () => {
+    const store = renderPresent();
+    store.dispatch(startTour());
+    fireEvent.click(screen.getByRole("button", { name: "🖥 Presentazione" }));
+
+    act(() => store.dispatch(endTour())); // il tour finisce per conto suo (Tour.tsx)
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(store.getState().mode.present).toBe(false);
   });
 });

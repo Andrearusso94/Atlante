@@ -78,6 +78,22 @@
   gap: 10px;
 }
 
+/* v12 riga 188 (body.present #toolBox): in presentazione il box si riposiziona in
+   basso al centro, riga orizzontale invece che colonna — stesso bersaglio (.tools, ex
+   #toolBox), niente `.tool-h` da nascondere qui: nel v12 quella classe è solo l'header
+   "Aula" (riga 288), mai portato in React; le etichette dei bottoni (Presentazione/Tour
+   guidato/Quiz) restano visibili in presentazione anche nel v12 — verificato via grep
+   sul markup originale (righe 288-291), non solo sul CSS. */
+:global(body.present) .tools {
+  left: 50%;
+  top: auto;
+  transform: translateX(-50%);
+  bottom: 20px;
+  flex-direction: row;
+  width: auto;
+  align-items: center;
+}
+
 /* v12 righe 65-67: a modale aperta (lezione o card IG, body.modal-open) i pannelli
    intorno al globo si attenuano e smettono di reagire al puntatore — stesso bersaglio
    del v12 (#head,#ctrlR,#lesson,#timeline,#aiBar); bottomStack sostituisce la coppia
