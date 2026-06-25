@@ -8,6 +8,7 @@ import { selectBordersOn, selectPlagueActive, selectTheme, setBordersOn, setPlag
 import { routePlagueClick } from "./plagueClickRoute";
 import { acquirePlagueOwnership, createPlagueOwnershipState, releasePlagueOwnership } from "./plagueOwnership";
 import { ensurePlagueReady } from "./features/plague/ensurePlagueReady";
+import { resetTimelineOnSceneReady } from "./features/timeline/resetOnSceneReady";
 import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
 import Controls from "./features/controls/Controls";
@@ -75,6 +76,14 @@ export default function App() {
     return ensurePlagueReady({ engine, dispatch, bordersOn });
   }
 
+  // GlobeEngine.onSceneReady (v12 riga 529): ogni scena nuova riparte da zero e si
+  // avvia da sola — features/timeline/resetOnSceneReady.ts.
+  function handleSceneReady() {
+    const engine = engineRef.current;
+    if (!engine) return;
+    resetTimelineOnSceneReady({ engine, dispatch });
+  }
+
   // Apre la card Instagram (features/igCard) per la regione `name` — chiamata sia dal
   // coordinatore del click sul globo qui sotto, sia dalle tappe del Tour (prop
   // onOpenIgCard). `seq` distingue due aperture sulla stessa regione di fila, stesso
@@ -96,6 +105,7 @@ export default function App() {
 
     const engine = new GlobeEngine({
       onTick: setTick,
+      onSceneReady: handleSceneReady,
       onBordersEraChange: setBordersEra,
       onPlagueRegionClick: (name) => {
         switch (routePlagueClick(modeRef.current)) {
@@ -134,6 +144,16 @@ export default function App() {
 
   useEffect(() => {
     engineRef.current?.setBorders(bordersOn);
+  }, [bordersOn]);
+
+  // v12 (bToggle off, righe 688): spegnendo i confini, #bEra torna stringa vuota — a
+  // differenza degli altri due stati (righe 684/875), questo non arriva mai dal motore
+  // via onBordersEraChange (syncPlague/updateBorders non emettono nulla quando i confini
+  // sono spenti), va quindi azzerato esplicitamente qui. Il teardown del layer Peste
+  // (v12: teardownPlague() nello stesso handler) avviene già da solo nell'effetto sopra
+  // (engine.setBorders(false) -> syncPlagueWithBorders -> teardownPlague).
+  useEffect(() => {
+    if (!bordersOn) setBordersEra("");
   }, [bordersOn]);
 
   useEffect(() => {

@@ -11,9 +11,11 @@ const THEMES: { value: Theme; icon: string; label: string }[] = [
 ];
 
 export interface ControlsProps {
-  /** v12: testo di `#bEra` ("mappa del mondo: 1500" / "mappa del 1300 · ☩ Peste Nera —
-   * tocca un territorio"). Arriva da `GlobeEngine.onBordersEraChange` via App.tsx, mai
-   * da Redux (stesso principio di onTick, RICOGNIZIONE-v12.md §4). */
+  /** v12: testo di `#bEra` — tre stati: "mappa del mondo: 1500 d.C." (confini attivi),
+   * stringa vuota (confini spenti), o markup con uno `<span>` colorato quando la Peste
+   * Nera è attiva (v12 riga 875: `bEra.innerHTML=...`, non solo testo). Arriva da
+   * `GlobeEngine.onBordersEraChange` via App.tsx, mai da Redux (stesso principio di
+   * onTick, RICOGNIZIONE-v12.md §4). */
   eraLabel: string;
 }
 
@@ -52,7 +54,10 @@ export default function Controls({ eraLabel }: ControlsProps) {
           <span>Confini reali dell'epoca</span>
           <span className={styles.switch} />
         </button>
-        <div className={styles.era}>{eraLabel}</div>
+        {/* v12 riga 875: `bEra.innerHTML=...` — il caso "Peste Nera attiva" porta un
+            <span style="color:var(--gold-2)"> reale, non testo letterale (stesso
+            pattern già usato per il markup curato in features/igCard/IgCard.tsx). */}
+        <div className={styles.era} dangerouslySetInnerHTML={{ __html: eraLabel }} />
       </div>
     </div>
   );
