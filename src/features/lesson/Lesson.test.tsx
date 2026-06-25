@@ -99,6 +99,20 @@ describe("Lesson", () => {
     expect(aiLessonMock).not.toHaveBeenCalled();
   });
 
+  it("modale (v12 righe 553-563): con solo il contesto popolato, le altre intestazioni di sezione non vengono renderizzate", async () => {
+    renderLesson(FALLBACK.peste);
+
+    fireEvent.click(screen.getByText("Da Caffa a Messina"));
+
+    await waitFor(() => screen.getByText(/Lezione di esempio curata a mano\./));
+    screen.getByText("Contesto");
+    expect(screen.queryByText("Che cosa accadde")).toBeNull();
+    expect(screen.queryByText("Cause")).toBeNull();
+    expect(screen.queryByText("Conseguenze")).toBeNull();
+    expect(screen.queryByText("Una voce dell'epoca")).toBeNull();
+    expect(screen.queryByText("Da chiedere alla classe")).toBeNull();
+  });
+
   it("evento senza detail: chiama loadLesson, mostra loading e poi il disclaimer IA", async () => {
     const card: LessonCard = {
       context: "ctx",
@@ -121,6 +135,37 @@ describe("Lesson", () => {
     );
     await waitFor(() => screen.getByText("una citazione verificabile"));
     screen.getByText(/Lezione redatta dall'IA con ricerca web — verifica i dettagli prima dell'aula\./);
+  });
+
+  it("modale (v12 righe 553-563): con tutti i campi popolati, sezioni nell'ordine fisso del v12 e liste per cause/conseguenze/spunti", async () => {
+    const card: LessonCard = {
+      context: "ctx",
+      what: "what",
+      causes: ["causa1", "causa2"],
+      consequences: ["conseguenza1"],
+      quote: "una citazione verificabile",
+      classroom: ["spunto1"],
+    };
+    aiLessonMock.mockResolvedValue(card);
+    renderLesson(AI_SPEC);
+
+    fireEvent.click(screen.getByText("Inizio della prima guerra punica"));
+    await waitFor(() => screen.getByText("una citazione verificabile"));
+
+    const headings = screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent);
+    expect(headings).toEqual([
+      "Contesto",
+      "Che cosa accadde",
+      "Cause",
+      "Conseguenze",
+      "Una voce dell'epoca",
+      "Da chiedere alla classe",
+    ]);
+
+    expect(screen.getByText("Cause").nextElementSibling?.tagName).toBe("UL");
+    expect(screen.getByText("causa1").tagName).toBe("LI");
+    expect(screen.getByText("Conseguenze").nextElementSibling?.tagName).toBe("UL");
+    expect(screen.getByText("Da chiedere alla classe").nextElementSibling?.tagName).toBe("UL");
   });
 
   it("evento senza detail, l'IA non risponde: messaggio leggibile e distinto per codice (504)", async () => {

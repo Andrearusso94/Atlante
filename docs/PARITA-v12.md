@@ -235,6 +235,41 @@ espone il chevron (`aria-hidden`, conteggio pari alle voci di `teaching.timeline
 
 ---
 
+## Blocco 10 — Modale lezione: scheda completa (`renderFullLesson`, righe 553-563)
+
+Il Blocco 2 copre l'apertura/chiusura della modale e il suo CSS; il Blocco 9 copre il
+pannello (`renderLesson`, righe 533-544). Qui si confronta il **contenuto** della
+modale — `#mBody`, riempito da `renderFullLesson(L,fb)` — con `Lesson.tsx:254-308`.
+
+| v12 (righe) | Comportamento | Implementazione React | Stato |
+|---|---|---|---|
+| 556-561 | ordine fisso delle sezioni: Contesto → Che cosa accadde → Cause → Conseguenze → "Una voce dell'epoca" → Da chiedere alla classe | `Lesson.tsx:257-298` — stesso ordine di `<Section>`/blocco citazione | ✓ |
+| 554, 556-559, 561 | `sec(h,html)`: se il contenuto è vuoto, l'intera sezione (intestazione **compresa**) viene omessa — vale per Contesto/Che cosa accadde/Cause/Conseguenze/Da chiedere alla classe | `Lesson.tsx:257-298` — ogni `<Section>` è dentro `{card.X && (...)}` o `{card.X.length > 0 && (...)}`; `Section` (riga 29-36) renderizza sempre `<h3>` quando invocato, ma l'intero blocco (incluso l'`<h3>`) non monta se la guardia è falsa | ✓ |
+| 558-559 | Cause/Conseguenze sono liste (`<ul><li>`), non paragrafi | `Lesson.tsx:269-275`, `278-284` | ✓ |
+| 561 | Da chiedere alla classe è una lista (`<ul><li>`), non paragrafi | `Lesson.tsx:293-296` | ✓ |
+| 560 | "Una voce dell'epoca": nel v12 scritta inline (`(L.quote?...)`), non passa per `sec()` come le altre — ma stesso markup risultante (`<h3>`+`<p class="quote">`), stessa regola CSS `.m-body h3` per l'intestazione | `Lesson.tsx:285-289` — usa lo stesso componente `<Section>` delle altre, dentro `{card.quote && (...)}`: output finale identico (h3 omesso se quote vuoto), nessuna differenza visibile | ✓ stesso risultato a schermo, riusa `Section` invece di duplicare il markup |
+| 562 | disclaimer SEMPRE presente, testo diverso in base a `fb` (fallback/curato vs IA reale) — **distinto** dal `lastDataNote` del pannello (v12 riga 524/526, Blocco 9 non lo tocca) | `Lesson.tsx:299-306` — `{origin && <p className={styles.disclaimer}>...}`, testo `origin==="ai" ? "...IA..." : "...curata a mano."`; `origin` impostato a `"curated"` quando si usa `ev.detail` (apertura diretta o fallback su errore IA, `Lesson.tsx:92-93,103-104`) e a `"ai"` solo dopo `loadLesson.fulfilled` (`Lesson.tsx:101`) | ✓ verificato nel codice React attuale, non solo nel v12 — la distinzione esiste davvero |
+| 79-84 | CSS `.m-body h3/p/.quote/ul/li` | `Lesson.module.css .sectionTitle/.quote` (paragrafi/liste senza classe dedicata, ereditano da `.modalBody`) | ✓ 1:1 |
+| 87 | CSS `.m-warn` | `Lesson.module.css .disclaimer` | ✓ 1:1 |
+
+**Nota sul disclaimer vs `lastDataNote`:** sono due avvisi distinti e non vanno
+confusi. `lastDataNote` (v12 riga 524/526) appartiene al **pannello** e riguarda i
+confini reali (Wikidata/historical-basemaps trovati o non trovati per l'archetipo
+`territory`) — fuori scope di questo blocco, già citato nel Blocco 3 come differenza
+intenzionale (`lastDataNote` ridotto a stringa generica fissa). Il disclaimer di
+questo blocco appartiene alla **modale** e riguarda solo l'origine della lezione
+(IA vs curata a mano): nessuna sovrapposizione fra i due.
+
+Esito: parità completa, nessun gap. Test aggiunti in `Lesson.test.tsx`: con solo
+`context` popolato (caso curatedCard/fallback) le altre intestazioni non vengono
+renderizzate; con tutti i campi popolati le sezioni appaiono nell'ordine fisso del
+v12 e Cause/Conseguenze/Da chiedere alla classe sono effettivamente `<ul><li>`. La
+distinzione del disclaimer fallback/IA era già coperta dai test preesistenti
+("evento con detail curato" → "curata a mano.", "evento senza detail" → "redatta
+dall'IA…").
+
+---
+
 ## Blocchi non ancora passati in rassegna
 
 Nessuno — Tour/Quiz/Timeline/Presentazione erano gli ultimi elencati. Eventuali sezioni
