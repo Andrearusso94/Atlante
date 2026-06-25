@@ -206,7 +206,10 @@ export default function Lesson() {
 
         {/* Carica non richiede una scena corrente (è così che se ne carica una prima
             volta, v12: loadBtn/loadFile erano sempre presenti in #aiBar, non condizionati
-            a currentSpec — solo l'azione di Salva si autodisabilita, come nel v12). */}
+            a currentSpec). Il `disabled` su Salva quando `!currentSpec` è un'aggiunta
+            rispetto al v12 (riga 938: `if(!currentSpec)return` è un no-op silenzioso nel
+            click handler, il bottone non viene mai disabilitato visivamente) — scelta
+            UX deliberata, non un comportamento portato 1:1 dal v12 (Blocco 11). */}
         <div className={styles.saveLoad}>
           <button type="button" className={styles.button} onClick={handleSave} disabled={!currentSpec}>
             ⤓ Salva lezione
