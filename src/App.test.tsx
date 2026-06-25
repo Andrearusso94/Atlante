@@ -67,4 +67,31 @@ describe("App — modale lezione", () => {
     const overlay = dialog.parentElement; // .modal (dialog) è dentro .overlay (backdrop)
     expect(overlay?.parentElement).toBe(scene.parentElement);
   });
+
+  // Bug 3 riportato ("i tasti di chiusura della modalità presentazione non
+  // funzionano") era in realtà un sintomo a valle del bug sopra, verificato in un
+  // browser reale (Chromium headless): con la modale incollata (Chiudi non
+  // cliccabile, vedi test sopra), body.modal-open non veniva mai rimosso — quindi
+  // anche dopo un click su "Esci" da Presentazione (che TOGLIE correttamente
+  // body.present), lo schermo restava dimmed/sfocato per colpa della classe
+  // modal-open ancora attaccata, e sembrava che "chiudere" non avesse fatto nulla.
+  // Qui si blocca l'intera sequenza: apri la modale, chiudila, entra/esci dalla
+  // presentazione — alla fine il body non deve avere NESSUNA classe residua.
+  it("modale lezione chiusa correttamente + presentazione: nessuna classe residua su body alla fine", async () => {
+    renderApp();
+    await waitFor(() => screen.getByText("Da Caffa a Messina"));
+
+    fireEvent.click(screen.getByText("Da Caffa a Messina"));
+    await waitFor(() => screen.getByRole("dialog"));
+    expect(document.body.classList.contains("modal-open")).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Chiudi" }));
+    expect(document.body.classList.contains("modal-open")).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "🖥 Presentazione" }));
+    expect(document.body.classList.contains("present")).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "🖥 Esci" }));
+    expect(document.body.className).toBe("");
+  });
 });
