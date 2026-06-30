@@ -131,22 +131,6 @@ describe("IgCard", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("bug#3 — chiudi X poi new-seq: la card non si riapre (simula loop Tour)", () => {
-    // Riproduce il loop: Tour rilancia onOpenIgCard (non memoizzata) ad ogni
-    // re-render di App.tsx → IgCard riceve open con seq sempre crescente.
-    // Prima del fix: il nuovo seq passava la guardia lastSeqRef e riaprìva la card.
-    const { setOpen } = renderIgCard();
-    setOpen({ name: "France", seq: 1 });
-    expect(screen.queryByRole("dialog")).not.toBeNull();
-
-    fireEvent.click(screen.getByLabelText("Chiudi"));
-    expect(screen.queryByRole("dialog")).toBeNull();
-
-    // Tour loop: arriva un secondo tick con seq nuovo — deve restare chiusa
-    setOpen({ name: "France", seq: 2 });
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
   it("una nuova apertura (nuova regione) azzera l'indice della slide", () => {
     const { setOpen } = renderIgCard();
     const france = byName("France")!;

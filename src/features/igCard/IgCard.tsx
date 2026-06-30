@@ -27,21 +27,11 @@ export default function IgCard({ open }: IgCardProps) {
   const [visible, setVisible] = useState(false);
   const [slideIdx, setSlideIdx] = useState(0);
   const lastSeqRef = useRef<number | null>(null);
-  // Flag alzato da handleClose: impedisce che arrivi un open con seq nuovo
-  // (es. Tour che rilancia onOpenIgCard perché non è memoizzata) riapra la card
-  // dopo che l'utente l'ha chiusa esplicitamente. Si azzera solo quando open
-  // torna a null (App.tsx ha svuotato la richiesta).
-  const userClosedRef = useRef(false);
   const actsRef = useRef<HTMLSpanElement>(null);
   const swipeRef = useRef({ x: 0, active: false });
 
   useEffect(() => {
-    if (!open) {
-      userClosedRef.current = false;
-      return;
-    }
-    if (open.seq === lastSeqRef.current) return;
-    if (userClosedRef.current) return;
+    if (!open || open.seq === lastSeqRef.current) return;
     lastSeqRef.current = open.seq;
     setVisible(true);
     setSlideIdx(0);
@@ -56,7 +46,6 @@ export default function IgCard({ open }: IgCardProps) {
   }
 
   function handleClose() {
-    userClosedRef.current = true;
     setVisible(false);
   }
 
