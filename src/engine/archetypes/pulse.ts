@@ -16,6 +16,15 @@ type PulseSpec = Extract<SceneSpec, { archetype: "pulse" }>;
 // portato letteralmente per fedeltà.
 type PulseItemLike = PulseItem & { lat?: number; lon?: number; name?: string };
 
+/**
+ * Renderizza l'archetipo `pulse`: per ogni item risolve l'evento su Wikidata
+ * (o, in mancanza, su lat/lon di ripiego) e piazza punto pulsante + etichetta
+ * sul globo nello strato `ctx.aiLayer`.
+ *
+ * @param s - Specifica della scena per l'archetipo `pulse` (lista di item da risolvere).
+ * @returns Risultato dell'archetipo con anno corrente, funzione di formattazione
+ *          dell'anno e nota sugli eventi verificati/non risolti.
+ */
 export async function renderPulse(
   s: PulseSpec,
   ys: number,
