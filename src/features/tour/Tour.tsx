@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { endQuiz, endTour, selectTour, setTourIdx, setTourPaused, startTour } from "../../store/modeSlice";
 import { byName, SLIDE_MS, TOUR } from "../../data/peste";
@@ -116,7 +117,11 @@ export default function Tour({
 
   const region = byName(TOUR[tourIdx]);
 
-  return (
+  // La barra viene portata su document.body tramite portal per uscire dalla catena di
+  // transform del contenitore .tools (App.module.css), che intrappola position:fixed e
+  // causa il doppio bug: barra fuori asse nel tour normale e sovrapposta alla card in
+  // modalità presentazione (issue #7).
+  return createPortal(
     <div className={styles.bar} role="group" aria-label="Tour guidato">
       <button
         type="button"
@@ -151,6 +156,7 @@ export default function Tour({
       <button type="button" className={styles.exit} aria-label="Esci dal tour" onClick={handleExit}>
         ✕
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }

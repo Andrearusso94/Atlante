@@ -21,9 +21,10 @@
   background: rgba(227, 172, 70, 0.08);
 }
 
-/* v12 riga 157: #tourBar è un overlay fisso indipendente, fuori da #toolBox (qui
-   .tools) — senza position:fixed la barra finiva dentro .tools (App.module.css),
-   in alto a sinistra invece che in basso al centro. */
+/* Overlay fisso centrato in basso. Viene montato su document.body via portal (Tour.tsx)
+   per evitare che il transform del contenitore .tools (App.module.css) intrappoli
+   position:fixed, causando disallineamento in tour normale e sovrapposizione alla card
+   in modalità presentazione (issue #7). */
 .bar {
   composes: glass from global;
   position: fixed;
