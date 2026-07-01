@@ -11,6 +11,8 @@ import { ensurePlagueReady } from "./features/plague/ensurePlagueReady";
 import { resetTimelineOnSceneReady } from "./features/timeline/resetOnSceneReady";
 import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
+import RelatedEventsCard from "./features/relatedEventsCard/RelatedEventsCard";
+import type { RelatedEvent } from "./api/relatedEvents";
 import Controls from "./features/controls/Controls";
 import Timeline from "./features/timeline/Timeline";
 import Tour from "./features/tour/Tour";
@@ -18,6 +20,28 @@ import Quiz, { type QuizClick } from "./features/quiz/Quiz";
 import IgCard, { type IgCardOpen } from "./features/igCard/IgCard";
 import Present from "./features/present/Present";
 import styles from "./App.module.css";
+
+// Dati mock per tappa 2/3 (issue #13) — sostituiti con dati reali Wikidata nella tappa 3.
+const MOCK_RELATED_EVENTS: RelatedEvent[] = [
+  {
+    wikidataId: "Q11081",
+    title: "Morte nera",
+    description: "Pandemia di peste bubbonica che decimò la popolazione europea nel XIV secolo.",
+    year: 1347,
+  },
+  {
+    wikidataId: "Q2451",
+    title: "Prima crociata",
+    description: "Prima spedizione militare cristiana verso Gerusalemme.",
+    year: 1096,
+  },
+  {
+    wikidataId: "Q12583",
+    title: "Piccola Era Glaciale",
+    description: "Periodo di raffreddamento climatico che colpì l'Europa tra il XIV e il XIX secolo.",
+    year: 1300,
+  },
+];
 
 // Cablaggio centrale store Redux <-> GlobeEngine (blocco 10). Vive in App.tsx perché il
 // coordinatore del click sul globo deve conoscere insieme lo stato di più feature
@@ -178,6 +202,7 @@ export default function App() {
         <p className="sub">Scaffold pronto — tema corrente: {theme}</p>
       </div>
       <Lesson />
+      <RelatedEventsCard events={MOCK_RELATED_EVENTS} />
       <div className={styles.ctrlR}>
         <Controls eraLabel={bordersEra} />
       </div>
