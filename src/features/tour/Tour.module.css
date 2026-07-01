@@ -28,7 +28,7 @@
 .bar {
   composes: glass from global;
   position: fixed;
-  bottom: 190px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
