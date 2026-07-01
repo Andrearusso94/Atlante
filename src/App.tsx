@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { GlobeEngine } from "./engine/GlobeEngine";
 import type { TickPayload } from "./engine/loop";
@@ -88,10 +88,15 @@ export default function App() {
   // coordinatore del click sul globo qui sotto, sia dalle tappe del Tour (prop
   // onOpenIgCard). `seq` distingue due aperture sulla stessa regione di fila, stesso
   // pattern di quizClickSeqRef/setQuizClick.
-  function openIgCard(name: string) {
+  const openIgCard = useCallback((name: string) => {
     igCardSeqRef.current += 1;
     setIgCardOpen({ name, seq: igCardSeqRef.current });
-  }
+  }, []);
+
+  // Identità stabile per Tour (e flyTo inline del Quiz è fuori dalle dep dell'effetto Tour).
+  const tourFlyTo = useCallback((lat: number, lon: number) => {
+    engineRef.current?.flyTo(lat, lon);
+  }, []);
 
   // Letta dal coordinatore del click (closure stabile creata una sola volta in mount()):
   // un ref evita di dover ricreare GlobeEngine ad ogni cambio di tour/quiz.
@@ -187,7 +192,7 @@ export default function App() {
       <div className={styles.tools}>
         <Present />
         <Tour
-          onFlyTo={(lat, lon) => engineRef.current?.flyTo(lat, lon)}
+          onFlyTo={tourFlyTo}
           onOpenIgCard={openIgCard}
           onEnsurePlagueReady={handleEnsurePlagueReady}
           onAcquirePlague={acquirePlague}

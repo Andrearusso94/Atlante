@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import specReducer from "./store/specSlice";
@@ -22,6 +22,7 @@ vi.mock("./engine/GlobeEngine", () => ({
     setPlaying() {}
     setProgress() {}
     flyTo() {}
+    isPlagueActive() { return false; }
   },
 }));
 
@@ -39,6 +40,25 @@ function renderApp() {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+});
+
+describe("App — stabilità callback (issue #5)", () => {
+  it("openIgCard mantiene identità stabile tra render: avviare il Tour non genera Maximum update depth exceeded", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderApp();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("🎬 Tour guidato"));
+    });
+
+    const loopErrors = errorSpy.mock.calls.filter((args) =>
+      String(args[0]).includes("Maximum update depth exceeded"),
+    );
+    expect(loopErrors).toHaveLength(0);
+
+    errorSpy.mockRestore();
+  });
 });
 
 describe("App — modale lezione", () => {
