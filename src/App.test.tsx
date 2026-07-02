@@ -10,6 +10,22 @@ import modeReducer from "./store/modeSlice";
 // mount()/createGlobe() richiedono un vero contesto WebGL, irraggiungibile in jsdom
 // (vedi engine/GlobeEngine.test.ts) — qui sostituiamo la classe con uno stub no-op:
 // l'obiettivo del test è la composizione di App.tsx, non il motore 3D.
+vi.mock("./api/relatedEvents", () => ({
+  fetchRelatedEvents: vi.fn().mockResolvedValue([
+    { wikidataId: "Q1", title: "Morte nera", description: "Pandemia medievale.", year: 1347 },
+  ]),
+}));
+
+vi.mock("./api/genera", () => ({
+  generate: vi.fn().mockResolvedValue({
+    archetype: "pulse",
+    title: "Test",
+    yearStart: 100,
+    yearEnd: 200,
+    items: [],
+  }),
+}));
+
 vi.mock("./engine/GlobeEngine", () => ({
   GlobeEngine: class {
     mount() {}
@@ -26,6 +42,8 @@ vi.mock("./engine/GlobeEngine", () => ({
   },
 }));
 
+import { fetchRelatedEvents } from "./api/relatedEvents";
+import { generate } from "./api/genera";
 import App from "./App";
 
 function renderApp() {
@@ -97,7 +115,7 @@ describe("App — modale lezione", () => {
   // modal-open ancora attaccata, e sembrava che "chiudere" non avesse fatto nulla.
   // Qui si blocca l'intera sequenza: apri la modale, chiudila, entra/esci dalla
   // presentazione — alla fine il body non deve avere NESSUNA classe residua.
-  it("modale lezione chiusa correttamente + presentazione: nessuna classe residua su body alla fine", async () => {
+  it("modale lezione chiusa correttamente + presentazione: nessuna classe residua su body alla fine (issue #14)", async () => {
     renderApp();
     await waitFor(() => screen.getByText("Da Caffa a Messina"));
 
@@ -113,5 +131,22 @@ describe("App — modale lezione", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "🖥 Esci" }));
     expect(document.body.className).toBe("");
+  });
+});
+
+describe("App — eventi correlati (issue #15)", () => {
+  it("chiama fetchRelatedEvents con i parametri dello spec corrente e mostra i risultati", async () => {
+    renderApp();
+    await waitFor(() => screen.getByText("Morte nera"));
+    expect(fetchRelatedEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ yearStart: expect.any(Number), yearEnd: expect.any(Number) }),
+    );
+  });
+
+  it("Genera Ricerca chiama generate con il titolo dell'evento correlato", async () => {
+    renderApp();
+    const btn = await waitFor(() => screen.getByRole("button", { name: "Genera Ricerca" }));
+    fireEvent.click(btn);
+    await waitFor(() => expect(generate).toHaveBeenCalledWith("Morte nera"));
   });
 });

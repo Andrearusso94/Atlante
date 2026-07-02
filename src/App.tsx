@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { GlobeEngine } from "./engine/GlobeEngine";
 import type { TickPayload } from "./engine/loop";
 import { FALLBACK } from "./data/fallback";
-import { selectCurrentSpec, setCurrentSpec } from "./store/specSlice";
+import { selectCurrentSpec, setCurrentSpec, generateScene } from "./store/specSlice";
 import { selectBordersOn, selectPlagueActive, selectTheme, setBordersOn, setPlagueActive } from "./store/modeSlice";
 import { routePlagueClick } from "./plagueClickRoute";
 import { acquirePlagueOwnership, createPlagueOwnershipState, releasePlagueOwnership } from "./plagueOwnership";
@@ -12,7 +12,7 @@ import { resetTimelineOnSceneReady } from "./features/timeline/resetOnSceneReady
 import Generator from "./features/generator/Generator";
 import Lesson from "./features/lesson/Lesson";
 import RelatedEventsCard from "./features/relatedEventsCard/RelatedEventsCard";
-import type { RelatedEvent } from "./api/relatedEvents";
+import { fetchRelatedEvents, type RelatedEvent } from "./api/relatedEvents";
 import Controls from "./features/controls/Controls";
 import Timeline from "./features/timeline/Timeline";
 import Tour from "./features/tour/Tour";
@@ -20,28 +20,6 @@ import Quiz, { type QuizClick } from "./features/quiz/Quiz";
 import IgCard, { type IgCardOpen } from "./features/igCard/IgCard";
 import Present from "./features/present/Present";
 import styles from "./App.module.css";
-
-// Dati mock per tappa 2/3 (issue #13) — sostituiti con dati reali Wikidata nella tappa 3.
-const MOCK_RELATED_EVENTS: RelatedEvent[] = [
-  {
-    wikidataId: "Q11081",
-    title: "Morte nera",
-    description: "Pandemia di peste bubbonica che decimò la popolazione europea nel XIV secolo.",
-    year: 1347,
-  },
-  {
-    wikidataId: "Q2451",
-    title: "Prima crociata",
-    description: "Prima spedizione militare cristiana verso Gerusalemme.",
-    year: 1096,
-  },
-  {
-    wikidataId: "Q12583",
-    title: "Piccola Era Glaciale",
-    description: "Periodo di raffreddamento climatico che colpì l'Europa tra il XIV e il XIX secolo.",
-    year: 1300,
-  },
-];
 
 // Cablaggio centrale store Redux <-> GlobeEngine (blocco 10). Vive in App.tsx perché il
 // coordinatore del click sul globo deve conoscere insieme lo stato di più feature
@@ -65,6 +43,8 @@ export default function App() {
   const [tick, setTick] = useState<TickPayload | null>(null);
   const [quizClick, setQuizClick] = useState<QuizClick | null>(null);
   const [igCardOpen, setIgCardOpen] = useState<IgCardOpen | null>(null);
+  const [relatedEvents, setRelatedEvents] = useState<RelatedEvent[]>([]);
+
   // v12: testo di #bEra. Come progress/playing/anno (onTick), arriva dal motore via
   // callback e resta in stato locale React — mai in Redux (RICOGNIZIONE-v12.md §4).
   const [bordersEra, setBordersEra] = useState("");
@@ -116,6 +96,20 @@ export default function App() {
     igCardSeqRef.current += 1;
     setIgCardOpen({ name, seq: igCardSeqRef.current });
   }, []);
+
+  useEffect(() => {
+    if (!currentSpec) return;
+    setRelatedEvents([]);
+    void fetchRelatedEvents({
+      title: currentSpec.title,
+      yearStart: currentSpec.yearStart,
+      yearEnd: currentSpec.yearEnd,
+    }).then(setRelatedEvents);
+  }, [currentSpec]);
+
+  const handleGenerateSearch = useCallback((event: RelatedEvent) => {
+    void dispatch(generateScene(event.title));
+  }, [dispatch]);
 
   // Identità stabile per Tour (e flyTo inline del Quiz è fuori dalle dep dell'effetto Tour).
   const tourFlyTo = useCallback((lat: number, lon: number) => {
@@ -202,7 +196,7 @@ export default function App() {
         <p className="sub">Scaffold pronto — tema corrente: {theme}</p>
       </div>
       <Lesson />
-      <RelatedEventsCard events={MOCK_RELATED_EVENTS} />
+      <RelatedEventsCard events={relatedEvents} onGenerateSearch={handleGenerateSearch} />
       <div className={styles.ctrlR}>
         <Controls eraLabel={bordersEra} />
       </div>
