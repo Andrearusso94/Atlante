@@ -107,6 +107,12 @@ function bindingsToEvents(bindings: SparqlBinding[]): RelatedEvent[] {
  * combinando ricerca temporale (stesso arco di anni) e tematica (stessa categoria).
  *
  * Degrada con grazia (lista vuota) su errori di rete, risposta vuota o dati malformati.
+ *
+ * @param event - Dati dell'evento di partenza: titolo, intervallo di anni e
+ *   (opzionale) QID Wikidata della categoria per la ricerca tematica.
+ * @returns Promise che si risolve con un array di al massimo {@link MAX_RESULTS}
+ *   {@link RelatedEvent}, deduplicati per `wikidataId`. Restituisce `[]` in caso
+ *   di errore di rete o risposta malformata — non rigetta mai.
  */
 export async function fetchRelatedEvents(event: RelatedEventInput): Promise<RelatedEvent[]> {
   try {
