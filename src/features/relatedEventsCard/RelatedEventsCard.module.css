@@ -18,6 +18,28 @@
   padding: 18px 18px 8px;
   font-size: 13px;
   transition: opacity 0.4s ease, filter 0.5s ease;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--dim) var(--space);
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: var(--space);
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: var(--dim);
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
 }
 
 :global(body.modal-open) .panel {
