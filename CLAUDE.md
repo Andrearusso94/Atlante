@@ -33,3 +33,15 @@ Deploy: Cloudflare Workers (wrangler). Worker proxy IA in `worker/index.ts`.
 - Cambi di dipendenze major (React, Vite, Three.js, ecc.)
 - Modifiche a `worker/index.ts` che toccano la chiave IA, il rate limiting o la cache
 - Modifiche a `wrangler.toml`, secrets o binding Cloudflare (KV, vars)
+
+## Regole d'oro (dai run reali)
+- UNA issue = UN bug, con diagnosi precisa. Issue che confondono
+  due problemi producono fix plausibili ma sbagliati (lezione #3).
+- Il verde del judge NON significa fix giusto: per bug/feature visivi
+  la verifica finale è SEMPRE umana nel browser, prima del merge.
+- Funzioni passate come prop a componenti con useEffect vanno
+  memoizzate (useCallback): pattern noto di loop infinito (lezione #5).
+  - NON cancellare o indebolire test esistenti per far passare la build:
+  se un test esistente contraddice il fix, fermati e segnalalo nella PR.
+- Nomi accessibili (aria-label, testo dei button) devono essere UNIVOCI
+  nella vista: collisioni rompono i test e l'accessibilita' (lezione #13).
