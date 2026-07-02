@@ -110,7 +110,7 @@ async function handleGenera(request: Request, env: Env, ctx: ExecutionContext): 
 
   const data = await callAnthropic(env, {
     model: env.MODEL || DEFAULT_MODEL,
-    max_tokens: 1000,
+    max_tokens: 4000,
     system: SYS_GENERA,
     messages: [{ role: "user", content: `Richiesta dell'insegnante: "${q}". Genera la scene spec.` }],
   });
